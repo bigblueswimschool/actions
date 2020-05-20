@@ -18,6 +18,14 @@ async function run() {
       // core.debug(`param: chart = "${chart}"`);
       // core.debug(`param: values = "${values}"`);
       
+      // Authenticate Google Cloud
+      await exec.exec('gcloud', [
+        'auth',
+        'activate-service-account',
+        '--key-file',
+        `${process.env.GOOGLE_APPLICATION_CREDENTIALS}`
+      ])
+
       const gcloudArgs = [
         'container',
         'clusters',

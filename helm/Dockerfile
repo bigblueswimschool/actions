@@ -1,4 +1,4 @@
-FROM node:10.16-alpine
+FROM bigblueswimschool/alpine-node-gcloud
 
 ENV BASE_URL="https://get.helm.sh"
 
