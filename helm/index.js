@@ -96,7 +96,8 @@ async function run() {
           "--install",
           "--values",
           "values.yml",
-          "--dry-run"
+          "--dry-run",
+          "--debug"
       ];
 
       process.env.HELM_HOME = "/root/.helm/"
