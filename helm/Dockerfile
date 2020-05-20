@@ -15,9 +15,10 @@ RUN apk add --no-cache ca-certificates \
     # Init version 2 helm:
     helm init --client-only
 
-RUN npm install
-
 ENV PYTHONPATH "/usr/lib/python3.8/site-packages/"
 
-COPY . /src/
-ENTRYPOINT ["node", "/src/index.js"]
+COPY . /usr/app/
+
+RUN npm install
+
+ENTRYPOINT ["node", "/usr/app/index.js"]
