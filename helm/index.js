@@ -18,9 +18,7 @@ function getValues(values) {
  */
 async function run() {
     try {
-      const context = github.context;
-      await status("pending");
-  
+      // const context = github.context;  
       const appName = getInput("release", required);
       const namespace = getInput("namespace", required);
       const chart = `/usr/app/charts/${getInput("chart", required)}`;
@@ -43,7 +41,6 @@ async function run() {
     } catch (error) {
       core.error(error);
       core.setFailed(error.message);
-      await status("failure");
     }
   }
   
