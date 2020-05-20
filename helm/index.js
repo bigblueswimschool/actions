@@ -13,6 +13,23 @@ function getValues(values) {
     return values;
 }
 
+function getInput(name, options) {
+  const context = github.context;
+  const deployment = context.payload.deployment;
+  let val = core.getInput(name.replace("_", "-"), {
+    ...options,
+    required: false
+  });
+  if (deployment) {
+    if (deployment[name]) val = deployment[name];
+    if (deployment.payload[name]) val = deployment.payload[name];
+  }
+  if (options && options.required && !val) {
+    throw new Error(`Input required and not supplied: ${name}`);
+  }
+  return val;
+}
+
 /**
  * Run executes the helm deployment.
  */
