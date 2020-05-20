@@ -20,10 +20,10 @@ function getInput(name, options) {
     ...options,
     required: false
   });
-  if (deployment) {
-    if (deployment[name]) val = deployment[name];
-    if (deployment.payload[name]) val = deployment.payload[name];
-  }
+  // if (deployment) {
+  //   if (deployment[name]) val = deployment[name];
+  //   if (deployment.payload[name]) val = deployment.payload[name];
+  // }
   if (options && options.required && !val) {
     throw new Error(`Input required and not supplied: ${name}`);
   }
@@ -35,7 +35,7 @@ function getInput(name, options) {
  */
 async function run() {
     try {
-      // const context = github.context;  
+      const context = github.context;  
       const appName = getInput("release", required);
       const namespace = getInput("namespace", required);
       const chart = `/usr/app/charts/${getInput("chart", required)}`;
