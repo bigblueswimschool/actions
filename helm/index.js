@@ -22,6 +22,12 @@ const getChart = () => {
   return `/usr/app/charts/${chart}`
 }
 
+const getValues = () => {
+  let values = core.getInput('values')
+  values = values || {}
+  return values
+}
+
 /**
  * authGCloud() activates the service account using the ENV var
  */
@@ -59,6 +65,7 @@ async function run() {
       const appName = getAppName()
       const namespace = getNamespace()
       const chart = getChart()
+      const values = getValues()
 
       // const namespace = getInput("namespace", required);
       // const chart = `/usr/app/charts/${getInput("chart", required)}`;
@@ -67,7 +74,7 @@ async function run() {
       core.debug(`param: appName = "${appName}"`);
       core.debug(`param: namespace = "${namespace}"`);
       core.debug(`param: chart = "${chart}"`);
-      // core.debug(`param: values = "${values}"`);
+      core.debug(`param: values = "${values}"`);
       
       // Authenticate Google Cloud
       await authGCloud()
