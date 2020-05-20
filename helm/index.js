@@ -17,7 +17,20 @@ async function run() {
       // core.debug(`param: namespace = "${namespace}"`);
       // core.debug(`param: chart = "${chart}"`);
       // core.debug(`param: values = "${values}"`);
-  
+      
+      const gcloudArgs = [
+        'container',
+        'clusters',
+        'get-credentials',
+        process.env.CLUSTER_NAME,
+        '--zone',
+        process.env.COMPUTE_ZONE,
+        '--project',
+        process.env.PROJECT_ID
+      ]
+
+      await exec.exec('gcloud', gcloudArgs);
+      
       // Setup command options and arguments.
       const args = [
           "list"

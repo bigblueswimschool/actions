@@ -15,6 +15,9 @@ RUN apk add --no-cache ca-certificates \
     # Init version 2 helm:
     helm init --client-only
 
+RUN curl -sSL https://sdk.cloud.google.com | bash
+ENV PATH $PATH:/root/google-cloud-sdk/bin
+
 ENV PYTHONPATH "/usr/lib/python3.8/site-packages/"
 
 WORKDIR /usr/app/
