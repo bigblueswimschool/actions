@@ -94,7 +94,8 @@ async function run() {
           appName,
           chart,
           "--install",
-          "--values ./values.yml",
+          "--values",
+          "values.yml",
           "--dry-run"
       ];
 
