@@ -29,12 +29,12 @@ const getKubeCredentials = () => {
 async function run() {
     try {
       // const context = github.context;  
-      // const appName = getInput("release", required);
+      const appName = core.getInput('release', { required: true })
       // const namespace = getInput("namespace", required);
       // const chart = `/usr/app/charts/${getInput("chart", required)}`;
       // const values = getValues(getInput("values"));
       
-      // core.debug(`param: release = "${appName}"`);
+      core.debug(`param: release = "${appName}"`);
       // core.debug(`param: namespace = "${namespace}"`);
       // core.debug(`param: chart = "${chart}"`);
       // core.debug(`param: values = "${values}"`);
