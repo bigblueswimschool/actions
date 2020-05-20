@@ -41,7 +41,7 @@ async function run() {
       const chart = `/usr/app/charts/${getInput("chart", required)}`;
       const values = getValues(getInput("values"));
       
-      core.debug(`param: release = "${release}"`);
+      core.debug(`param: release = "${appName}"`);
       core.debug(`param: namespace = "${namespace}"`);
       core.debug(`param: chart = "${chart}"`);
       core.debug(`param: values = "${values}"`);
