@@ -2,6 +2,27 @@ const core = require("@actions/core");
 const github = require("@actions/github");
 const exec = require("@actions/exec");
 
+const authGCloud = () => {
+  return exec.exec('gcloud', [
+    'auth',
+    'activate-service-account',
+    '--key-file',
+    `${process.env.GOOGLE_APPLICATION_CREDENTIALS}`
+  ])
+}
+
+const getKubeCredentials = () => {
+  return exec.exec('gcloud', [
+    'container',
+    'clusters',
+    'get-credentials',
+    process.env.CLUSTER_NAME,
+    '--zone',
+    process.env.COMPUTE_ZONE,
+    '--project',
+    process.env.PROJECT_ID
+  ])
+}
 /**
  * Run executes the helm deployment.
  */
@@ -19,25 +40,10 @@ async function run() {
       // core.debug(`param: values = "${values}"`);
       
       // Authenticate Google Cloud
-      await exec.exec('gcloud', [
-        'auth',
-        'activate-service-account',
-        '--key-file',
-        `${process.env.GOOGLE_APPLICATION_CREDENTIALS}`
-      ])
+      await authGCloud()
 
-      const gcloudArgs = [
-        'container',
-        'clusters',
-        'get-credentials',
-        process.env.CLUSTER_NAME,
-        '--zone',
-        process.env.COMPUTE_ZONE,
-        '--project',
-        process.env.PROJECT_ID
-      ]
-
-      await exec.exec('gcloud', gcloudArgs);
+      // Get Kube Credentials
+      await getKubeCredentials()
       
       // Setup command options and arguments.
       const args = [
