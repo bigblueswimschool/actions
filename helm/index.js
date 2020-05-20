@@ -2,6 +2,17 @@ const core = require("@actions/core");
 const github = require("@actions/github");
 const exec = require("@actions/exec");
 
+const getAppName = () => {
+  const repository = process.env.GITHUB_REPOSITORY
+  const appNameInput = core.getInput('appName')
+  const appName = appNameInput || repository.split('/')[1]
+
+  return appName
+}
+
+/**
+ * authGCloud() activates the service account using the ENV var
+ */
 const authGCloud = () => {
   return exec.exec('gcloud', [
     'auth',
@@ -23,18 +34,19 @@ const getKubeCredentials = () => {
     process.env.PROJECT_ID
   ])
 }
+
 /**
  * Run executes the helm deployment.
  */
 async function run() {
     try {
       // const context = github.context;  
-      const appName = core.getInput('release', { required: true })
+      const appName = getAppName()
       // const namespace = getInput("namespace", required);
       // const chart = `/usr/app/charts/${getInput("chart", required)}`;
       // const values = getValues(getInput("values"));
       
-      core.debug(`param: release = "${appName}"`);
+      core.debug(`param: appName = "${appName}"`);
       // core.debug(`param: namespace = "${namespace}"`);
       // core.debug(`param: chart = "${chart}"`);
       // core.debug(`param: values = "${values}"`);
