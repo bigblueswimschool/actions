@@ -2,12 +2,24 @@ const core = require("@actions/core");
 const github = require("@actions/github");
 const exec = require("@actions/exec");
 
+/**
+ * Input fetchers
+ */
 const getAppName = () => {
   const repository = process.env.GITHUB_REPOSITORY
   const appNameInput = core.getInput('appName')
   const appName = appNameInput || repository.split('/')[1]
 
   return appName
+}
+
+const getNamespace = () => {
+  return 'default'
+}
+
+const getChart = () => {
+  const chart = core.getInput('chart', { required: true })
+  return `/usr/app/charts/${chart}`
 }
 
 /**
@@ -22,6 +34,9 @@ const authGCloud = () => {
   ])
 }
 
+/**
+ * getKubeCredentials() fetches the cluster credentials
+ */
 const getKubeCredentials = () => {
   return exec.exec('gcloud', [
     'container',
@@ -42,13 +57,16 @@ async function run() {
     try {
       // const context = github.context;  
       const appName = getAppName()
+      const namespace = getNamespace()
+      const chart = getChart()
+
       // const namespace = getInput("namespace", required);
       // const chart = `/usr/app/charts/${getInput("chart", required)}`;
       // const values = getValues(getInput("values"));
       
       core.debug(`param: appName = "${appName}"`);
-      // core.debug(`param: namespace = "${namespace}"`);
-      // core.debug(`param: chart = "${chart}"`);
+      core.debug(`param: namespace = "${namespace}"`);
+      core.debug(`param: chart = "${chart}"`);
       // core.debug(`param: values = "${values}"`);
       
       // Authenticate Google Cloud
