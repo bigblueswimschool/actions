@@ -19,6 +19,8 @@
   "dependencies": {
     "@actions/core": "^1.2.4",
     "@actions/exec": "^1.0.4",
-    "@actions/github": "^2.2.0"
+    "@actions/github": "^2.2.0",
+    "fs": "0.0.1-security",
+    "util": "^0.12.3"
   }
 }

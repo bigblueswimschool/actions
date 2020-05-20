@@ -1,6 +1,9 @@
 const core = require("@actions/core");
 const github = require("@actions/github");
 const exec = require("@actions/exec");
+const fs = require("fs");
+const util = require("util");
+const writeFile = util.promisify(fs.writeFile);
 
 /**
  * Input fetchers
@@ -82,9 +85,17 @@ async function run() {
       // Get Kube Credentials
       await getKubeCredentials()
       
+      // Write values file
+      await writeFile("./values.yml", values);
+
       // Setup command options and arguments.
       const args = [
-          "list"
+          "upgrade",
+          appName,
+          chart,
+          "--install",
+          "--values ./values.yml",
+          "--dry-run"
       ];
 
       process.env.HELM_HOME = "/root/.helm/"
