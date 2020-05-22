@@ -69,10 +69,6 @@ async function run() {
       const namespace = getNamespace()
       const chart = getChart()
       const values = getValues()
-
-      // const namespace = getInput("namespace", required);
-      // const chart = `/usr/app/charts/${getInput("chart", required)}`;
-      // const values = getValues(getInput("values"));
       
       core.debug(`param: appName = "${appName}"`);
       core.debug(`param: namespace = "${namespace}"`);
