@@ -1,0 +1,4 @@
+apiVersion: v1
+description: Nest Service Deployment
+name: nest-service
+version: 0.0.1
