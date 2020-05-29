@@ -30,6 +30,6 @@ spec:
   tls:
   - hosts:
     - {{ required "A valid .Values.domain entry required!" $.Values.domain }}
-    secretName: {{ $.Values.domain }}-secret
+    secretName: {{ $.Release.Name }}-secret
 ---
 {{- end }}
