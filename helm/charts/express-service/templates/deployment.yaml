@@ -1,0 +1,83 @@
+apiVersion: "extensions/v1beta1"
+kind: "Deployment"
+metadata:
+  labels:
+    app: {{ .Values.name }}
+  name: {{ .Values.name }}
+  namespace: default
+spec:
+  replicas: {{ .Values.replicas }}
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: {{ .Values.name }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name }}
+    spec:
+      containers:
+        - image: {{ .Values.repository }}/{{ .Values.name }}:{{ .Values.version }}
+          imagePullPolicy: IfNotPresent
+          tty: true
+          stdin: true
+          name: {{ .Values.name }}
+          ports:
+            - containerPort: {{ .Values.port | default 3000 }}
+          {{- if (.Values.readinessPath) }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.readinessPath }}
+              port: {{ .Values.port | default 3000 }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+          {{- end }}
+          envFrom:
+            {{- range .Values.secrets }}
+            - secretRef:
+                name: {{ .name }}
+            {{- end}}
+            - configMapRef:
+                name: {{ .Values.name }}-env
+                optional: true
+          {{- if (.Values.resources) }}
+          resources:
+            requests:
+              {{- if (.Values.resources.requests.cpu) }}
+              cpu: {{ .Values.resources.requests.cpu }}
+              {{- end }}
+              {{- if (.Values.resources.requests.memory) }}
+              memory: {{ .Values.resources.requests.memory }}
+              {{- end }}
+          {{- end }}
+          volumeMounts:
+            {{- if (.Values.apm) }}
+            - name: elastic-apm-node
+              mountPath: "/usr/config/elastic-apm-node.js"
+              subPath: elastic-apm-node.js
+              readOnly: true
+            {{- end }}
+            - name: google-cloud
+              mountPath: "/usr/config/google.json"
+              subPath: googleCloud.json
+              readOnly: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+        {{- if (.Values.apm) }}
+        - name: elastic-apm-node
+          secret:
+            secretName: elastic-apm-node
+        {{- end }}
+        - name: google-cloud
+          secret:
+            secretName: google-cloud
