@@ -8,7 +8,7 @@ metadata:
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     {{- if (.Values.cors) }}
     nginx.ingress.kubernetes.io/enable-cors: "true"
-    nginx.ingress.kubernetes.io/cors-allow-methods: "DELETE, GET, HEAD, OPTIONS, POST, PUT"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT"
     nginx.ingress.kubernetes.io/cors-allow-headers: "Accepts, Content-Type, Authorization, X-Access-Token, Client-Platform-ID, UTM-Code-ID, X-Request-Source"
     nginx.ingress.kubernetes.io/cors-allow-origin: "*"
     nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
