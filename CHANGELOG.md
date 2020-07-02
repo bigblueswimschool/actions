@@ -1,3 +1,6 @@
+## v 1.1.1
+- Add PATCH to cors
+
 ## v 1.1.0
 - Add express-service chart
 
