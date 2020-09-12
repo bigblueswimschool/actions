@@ -26,9 +26,10 @@ const getChart = () => {
 }
 
 const getValues = () => {
-  let values = core.getInput('values')
-  values = values || {}
-  return values
+  let jsonValues = core.getInput('values')
+  jsonValues = jsonValues || {}
+  yamlValues = YAML.stringify(JSON.parse(jsonValues))
+  return yamlValues
 }
 
 /**
