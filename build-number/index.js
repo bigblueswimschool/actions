@@ -18,14 +18,14 @@ const getLastBuildNumber = async (prefix) => {
     const tagRefs = response.data
     console.log(response.data)
 
-    const regex = new RegExp(`/${prefix}build-number-(\\d+)$)`)
+    const regex = new RegExp(`/${prefix}${tagPrefix}(\\d+)$)`)
     const tags = tagRefs.filter(t => t.ref.match(regex))
     console.log(tags)
 
     return 1
   } catch (error) {
     // If non found, start with build 0
-    if (error.response.status == 404) {
+    if (error && error.response && error.response.status == 404) {
       return 0
     } else {
       throw error
