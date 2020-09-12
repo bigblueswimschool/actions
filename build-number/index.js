@@ -21,10 +21,11 @@ const getLastBuildNumber = async (prefix) => {
     const regex = new RegExp(`/${prefix}build-number-(\\d+)$)`)
     const tags = tagRefs.filter(t => t.ref.match(regex))
     console.log(tags)
-    
+
     return 1
   } catch (error) {
     // If non found, start with build 0
+    console.log(error.response)
     if (error.response.status == 404) {
       console.log('Previous build not found...')
       return 0
