@@ -82,7 +82,7 @@ async function run() {
       await getKubeCredentials()
       
       // Write values file
-      await writeFile("./values.yml", values);
+      await writeFile("./values.json", values);
 
       // Setup command options and arguments.
       const args = [
@@ -91,7 +91,7 @@ async function run() {
           chart,
           "--install",
           "--values",
-          "values.yml",
+          "values.json",
           "--debug",
           "--dry-run"
       ];
