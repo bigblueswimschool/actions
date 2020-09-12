@@ -4,7 +4,7 @@ const exec = require("@actions/exec");
 const fs = require("fs");
 const util = require("util");
 const writeFile = util.promisify(fs.writeFile);
-const YAML = require('json2yaml');
+const YAML = require('json-to-pretty-yaml');
 
 /**
  * Input fetchers
@@ -84,7 +84,7 @@ async function run() {
       await getKubeCredentials()
       
       console.log(values)
-      
+
       // Write values file
       await writeFile("./values.yml", values);
 
