@@ -1,0 +1,11 @@
+{
+  "name": "build-number",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@actions/core": "~1.2.5",
+    "async": "~3.2.0",
+    "axios": "~0.20.0"
+  }
+}
