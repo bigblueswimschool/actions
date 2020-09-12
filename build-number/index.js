@@ -1,19 +1,15 @@
-const axios = require('axios')
-
-const fail = (message, exitCode = 1) => {
-  console.log(`::error::${message}`);
-  process.exit(exitCode);
-}
+const core = require("@actions/core");
+const axios = require('axios');
 
 async function run() {
   try {
     const path = '.build_number';
-    const prefix = process.env.INPUT_PREFIX ? `${process.env.INPUT_OFFSET}-` : '';
+    const prefix = process.env.INPUT_PREFIX ? `${process.env.INPUT_PREFIX}-` : '';
     
     if (process.env.INPUT_PREFIX) {
       console.log(`Using Prefix ${prefix}...`)
     }
-    
+
     //See if we've already generated the build number and are in later steps...
     if (fs.existsSync(path)) {
         let buildNumber = fs.readFileSync(path);
@@ -25,7 +21,8 @@ async function run() {
 
     for (let varName of ['INPUT_TOKEN', 'GITHUB_REPOSITORY', 'GITHUB_SHA']) {
       if (!process.env[varName]) {
-          fail(`ERROR: Environment variable ${varName} is not defined.`);
+          const error = new Error(`ERROR: Environment variable ${varName} is not defined.`)
+          throw error
       }
     }
     
