@@ -18,7 +18,7 @@ const getLastBuildNumber = async (prefix) => {
     const tagRefs = response.data
     console.log(response.data)
 
-    const regex = new RegExp(`/${prefix}${tagPrefix}(\\d+)$)`)
+    const regex = new RegExp(`/${prefix}${tagPrefix}(\\d+)$`)
     const tags = tagRefs.filter(t => t.ref.match(regex))
     console.log(tags)
 
