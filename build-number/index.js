@@ -16,6 +16,7 @@ const github = axios.create({
 
 const getLastBuildNumber = async (prefix) => {
   try {
+    // Fetch tag refs from github
     const response = await github.get(`/repos/${GITHUB_REPOSITORY}/git/refs/tags/${prefix}${tagPrefix}`);
     const tagRefs = response.data
 
@@ -25,7 +26,8 @@ const getLastBuildNumber = async (prefix) => {
 
     // Extract versions
     existingVersionTags = tags.map(t => parseInt(t.ref.match(/-(\d+)$/)[1]))
-
+    console.log(existingVersionTags)
+    
     // Return max version
     return Math.max(existingVersionTags)
   } catch (error) {
