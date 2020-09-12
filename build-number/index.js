@@ -5,6 +5,8 @@ const axios = require('axios');
 const tagPrefix = 'build-'
 const GITHUB_REPOSITORY = process.env.GITHUB_REPOSITORY || null
 
+let existingVersionTags = []
+
 const github = axios.create({
   baseURL: 'https://api.github.com',
   headers: {
@@ -16,13 +18,16 @@ const getLastBuildNumber = async (prefix) => {
   try {
     const response = await github.get(`/repos/${GITHUB_REPOSITORY}/git/refs/tags/${prefix}${tagPrefix}`);
     const tagRefs = response.data
-    console.log(response.data)
 
-    const regex = new RegExp(`/${prefix}${tagPrefix}(\\d+)$`)
-    const tags = tagRefs.filter(t => t.ref.match(regex))
-    console.log(tags)
+    // Filter refs
+    const tagRegex = new RegExp(`/${prefix}${tagPrefix}(\\d+)$`)
+    const tags = tagRefs.filter(t => t.ref.match(tagRegex))
 
-    return 1
+    // Extract versions
+    existingVersionTags = tags.map(t => parseInt(t.ref.match(/-(\d+)$/)[1]))
+
+    // Return max version
+    return Math.max(existingVersionTags)
   } catch (error) {
     // If non found, start with build 0
     if (error && error.response && error.response.status == 404) {
