@@ -30,6 +30,7 @@ const getLastBuildNumber = async (prefix) => {
       console.log('Previous build not found...')
       return 0
     } else {
+      console.log(error)
       throw error
     }
   }
