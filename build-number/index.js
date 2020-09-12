@@ -15,12 +15,20 @@ const github = axios.create({
 const getLastBuildNumber = async (prefix) => {
   try {
     const response = await github.get(`/repos/${GITHUB_REPOSITORY}/git/refs/tags/${prefix}${tagPrefix}`);
-    const tags = response.data
-    
+    const tagRefs = response.data
     console.log(response.data)
+
+    const regex = new RegExp(`/${prefix}build-number-(\\d+)$)`)
+    const tags = tagRefs.filter(t => t.ref.match(regex))
+    console.log(tags)
+    
     return 1
   } catch (error) {
-    console.log(error)
+    // If non found, start with build 0
+    if (error.response.status == 404) {
+      console.log('Previous build not found...')
+      return 0
+    }
     throw error
   }
 }
