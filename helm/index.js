@@ -83,6 +83,8 @@ async function run() {
       // Get Kube Credentials
       await getKubeCredentials()
       
+      console.log(values)
+      
       // Write values file
       await writeFile("./values.yml", values);
 
