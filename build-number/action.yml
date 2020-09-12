@@ -1,0 +1,14 @@
+name: Big Blue Build Number Action
+description: Calculates a build number off of run
+author: Big Blue Swim School
+icon: box
+color: blue-dark
+inputs:
+  offset:
+    description: Offset from run number
+outputs:
+  build_number:
+    description: 'Generated build number'
+runs:
+  using: node12
+  image: index.js
