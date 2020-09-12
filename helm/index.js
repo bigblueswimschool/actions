@@ -4,6 +4,7 @@ const exec = require("@actions/exec");
 const fs = require("fs");
 const util = require("util");
 const writeFile = util.promisify(fs.writeFile);
+const YAML = require('json-to-pretty-yaml');
 
 /**
  * Input fetchers
@@ -26,10 +27,19 @@ const getChart = () => {
 }
 
 const getValues = () => {
-  let jsonValues = core.getInput('values')
-  jsonValues = jsonValues || {}
-  yamlValues = YAML.stringify(JSON.parse(jsonValues))
-  return yamlValues
+  let yamlValues = core.getInput('values')
+  let jsonValues = core.getInput('jsonValues')
+
+  if (yamlValues) {
+    console.log('yaml values provided')
+    return yamlValues
+  } else if (jsonValues) {
+    console.log('json values provided')
+    jsonValues = jsonValues || {}
+    yamlValues = YAML.stringify(JSON.parse(jsonValues))
+    return yamlValues
+  }
+  return null
 }
 
 /**
