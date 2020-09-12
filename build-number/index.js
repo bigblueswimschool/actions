@@ -43,7 +43,7 @@ const getLastBuildNumber = async (prefix) => {
 
 const saveBuildNumber = async (prefix, buildNumber) => {
   let newRef = {
-    ref:`refs/tags/${prefix}${tagPrefix}-${buildNumber}`, 
+    ref:`refs/tags/${prefix}${tagPrefix}${buildNumber}`, 
     sha: GITHUB_SHA
   }
   try {
@@ -88,9 +88,9 @@ async function run() {
     }
 
     // Check environment vars
-    for (let varName of ['INPUT_TOKEN', 'GITHUB_REPOSITORY', 'GITHUB_SHA']) {
-      if (!process.env[varName]) {
-          const error = new Error(`ERROR: Environment variable ${varName} is not defined.`)
+    for (let envVar of ['INPUT_TOKEN', 'GITHUB_REPOSITORY', 'GITHUB_SHA']) {
+      if (!process.env[envVar]) {
+          const error = new Error(`ERROR: Environment variable ${envVar} is not defined.`)
           throw error
       }
     }
@@ -115,7 +115,7 @@ async function run() {
     console.log(`::set-env name=BUILD_NUMBER::${buildNumber}`);
     console.log(`::set-output name=build_number::${buildNumber}`);
     
-    // Save to file so it can be used for next jobs...
+    // Save to file
     fs.writeFileSync(path, buildNumber.toString());
     
     console.log(`Cleaning up tags...`)
