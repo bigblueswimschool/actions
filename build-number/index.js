@@ -71,13 +71,9 @@ const cleanupTags = (prefix) => {
 
 async function run() {
   try {
-    const path = '.build_number';
+    const path = process.env.INPUT_PREFIX ? `.${process.env.INPUT_PREFIX}_build_number` : '.build_number';
     const prefix = process.env.INPUT_PREFIX ? `${process.env.INPUT_PREFIX}-` : '';
     
-    if (prefix.length > 0) {
-      console.log(`Using Prefix ${prefix}`)
-    }
-
     // See if we've already generated a build number
     if (fs.existsSync(path)) {
         const buildNumber = fs.readFileSync(path);
