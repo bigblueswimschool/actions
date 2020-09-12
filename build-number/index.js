@@ -15,6 +15,8 @@ const github = axios.create({
 const getLastBuildNumber = async (prefix) => {
   try {
     const response = await github.get(`/repos/${GITHUB_REPOSITORY}/git/refs/tags/${prefix}${tagPrefix}`);
+    const tags = response.data
+    
     console.log(response.data)
     return 1
   } catch (error) {
