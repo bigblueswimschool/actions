@@ -11,7 +11,9 @@ inputs:
   chart:
     description: Helm chart path included in this repository. (required)
   values:
-    description: Helm chart values (YAML or JSON String)
+    description: Helm chart values (YAML)
+  jsonValues:
+    description: Helm chart values (JSON String)
 runs:
   using: docker
   image: Dockerfile
