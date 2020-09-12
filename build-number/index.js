@@ -25,7 +25,7 @@ const getLastBuildNumber = async (prefix) => {
     return 1
   } catch (error) {
     // If non found, start with build 0
-    console.log(error.response.status)
+    // console.log(error.response.status)
     if (error.response.status == 404) {
       console.log('Previous build not found...')
       return 0
