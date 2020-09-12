@@ -4,8 +4,10 @@ author: Big Blue Swim School
 icon: box
 color: blue-dark
 inputs:
-  offset:
-    description: Offset from run number
+  prefix:
+    description: 'Build Prefix'
+  token:
+    description: 'Repo Token'
 outputs:
   build_number:
     description: 'Generated build number'
