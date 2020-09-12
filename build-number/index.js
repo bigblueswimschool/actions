@@ -1,11 +1,13 @@
 const fs = require('fs');
+const async = require('async');
 const core = require("@actions/core");
 const axios = require('axios');
 
 const tagPrefix = 'build-'
 const GITHUB_REPOSITORY = process.env.GITHUB_REPOSITORY || null
+const GITHUB_SHA = process.env.GITHUB_SHA || null
 
-let existingVersionTags = []
+let existingTags = []
 
 const github = axios.create({
   baseURL: 'https://api.github.com',
@@ -22,14 +24,13 @@ const getLastBuildNumber = async (prefix) => {
 
     // Filter refs
     const tagRegex = new RegExp(`/${prefix}${tagPrefix}(\\d+)$`)
-    const tags = tagRefs.filter(t => t.ref.match(tagRegex))
+    existingTags = tagRefs.filter(t => t.ref.match(tagRegex))
 
     // Extract versions
-    existingVersionTags = tags.map(t => parseInt(t.ref.match(/-(\d+)$/)[1]))
-    console.log(existingVersionTags)
-    
+    const existingVersions = existingTags.map(t => parseInt(t.ref.match(/-(\d+)$/)[1]))
+
     // Return max version
-    return Math.max(existingVersionTags)
+    return Math.max(existingVersions)
   } catch (error) {
     // If non found, start with build 0
     if (error && error.response && error.response.status == 404) {
@@ -40,13 +41,41 @@ const getLastBuildNumber = async (prefix) => {
   }
 }
 
+const saveBuildNumber = async (prefix, buildNumber) => {
+  let newRef = {
+    ref:`refs/tags/${prefix}${tagPrefix}-${buildNumber}`, 
+    sha: GITHUB_SHA
+  }
+  try {
+    await github.post(`/repos/${GITHUB_REPOSITORY}/git/refs`, newRef)
+  } catch (error) {
+    throw error
+  }
+}
+
+const cleanupTags = (prefix) => {
+  return new Promise((resolve, reject) => {
+    const queue = async.queue((tag, done) => {
+      github.delete(`/repos/${GITHUB_REPOSITORY}/git/${tag.ref}`).then((response) => {
+        console.log(`Deleted tag: ${tag.ref}`)
+        done()
+      }).catch(error => reject(error))
+    })
+    queue.drain(() => {
+      console.log(`Cleanup Finished`)
+      resolve()
+    })
+    queue.push(existingTags)
+  })
+}
+
 async function run() {
   try {
     const path = '.build_number';
     const prefix = process.env.INPUT_PREFIX ? `${process.env.INPUT_PREFIX}-` : '';
     
     if (prefix.length > 0) {
-      console.log(`Using Prefix ${prefix}...`)
+      console.log(`Using Prefix ${prefix}`)
     }
 
     // See if we've already generated a build number
@@ -66,9 +95,32 @@ async function run() {
       }
     }
 
+    // Get last build number
     const lastBuildNumber = await getLastBuildNumber(prefix);
-    console.log(`Previous Build Number: ${lastBuildNumber}`);
+
+    if (lastBuildNumber > 0) {
+      console.log(`Previous Build Number: ${lastBuildNumber}`);
+    } else {
+      console.log(`No previous builds found`)
+    }
+
+    // Calculate new build number
+    const buildNumber = lastBuildNumber + 1
+    console.log(`New Build Number: ${buildNumber}`)
+
+    // Save build number
+    await saveBuildNumber(prefix, buildNumber)
+
+    //Setting the output and a environment variable to new build number...
+    console.log(`::set-env name=BUILD_NUMBER::${buildNumber}`);
+    console.log(`::set-output name=build_number::${buildNumber}`);
     
+    // Save to file so it can be used for next jobs...
+    fs.writeFileSync(path, buildNumber.toString());
+    
+    console.log(`Cleaning up tags...`)
+    await cleanupTags(prefix)
+
   } catch (error) {
     core.error(error);
     core.setFailed(error.message);
