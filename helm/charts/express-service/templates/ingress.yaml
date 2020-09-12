@@ -13,7 +13,7 @@ metadata:
     nginx.ingress.kubernetes.io/cors-allow-origin: "*"
     nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
     {{- end }}
-    certmanager.k8s.io/cluster-issuer: {{ $.Values.clusterIssuer.name | quote }}
+    certmanager.k8s.io/cluster-issuer: {{ .Values.cluster_issuer | quote }}
     kubernetes.io/tls-acme: "true"
     {{- if (.Values.websocket) }}
     nginx.org/websocket-services: {{ .Values.name }}
