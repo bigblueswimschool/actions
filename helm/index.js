@@ -4,6 +4,7 @@ const exec = require("@actions/exec");
 const fs = require("fs");
 const util = require("util");
 const writeFile = util.promisify(fs.writeFile);
+const YAML = require('json2yaml');
 
 /**
  * Input fetchers
@@ -26,9 +27,10 @@ const getChart = () => {
 }
 
 const getValues = () => {
-  let values = core.getInput('values')
-  values = values || {}
-  return values
+  let jsonValues = core.getInput('values')
+  jsonValues = jsonValues || {}
+  yamlValues = YAML.stringify(jsonValues)
+  return yamlValues
 }
 
 /**
@@ -82,7 +84,7 @@ async function run() {
       await getKubeCredentials()
       
       // Write values file
-      await writeFile("./values.json", values);
+      await writeFile("./values.yml", values);
 
       // Setup command options and arguments.
       const args = [
@@ -91,7 +93,7 @@ async function run() {
           chart,
           "--install",
           "--values",
-          "values.json",
+          "values.yml",
           "--debug",
           "--dry-run"
       ];
