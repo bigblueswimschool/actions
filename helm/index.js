@@ -17,6 +17,11 @@ const getAppName = () => {
   return appName
 }
 
+const getNamespace = () => {
+  const namespace = core.getInput('namespace')
+  return namespace || 'default'
+}
+
 const getChart = () => {
   const chart = core.getInput('chart', { required: true })
   return `/usr/app/charts/${chart}`
@@ -73,10 +78,12 @@ async function run() {
     try {
       // const context = github.context;  
       const appName = getAppName()
+      const namespace = getNamespace()
       const chart = getChart()
       const values = getValues()
       
       core.debug(`param: appName = "${appName}"`);
+      core.debug(`param: namespace = "${namespace}"`);
       core.debug(`param: chart = "${chart}"`);
       core.debug(`param: values = "${values}"`);
       
@@ -95,6 +102,8 @@ async function run() {
           appName,
           chart,
           "--install",
+          "--namespace",
+          namespace,
           "--values",
           "values.yml"
       ];
