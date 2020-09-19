@@ -18,7 +18,8 @@ const getAppName = () => {
 }
 
 const getNamespace = () => {
-  return 'default'
+  const namespace = core.getInput('namespace')
+  return namespace || 'default'
 }
 
 const getChart = () => {
