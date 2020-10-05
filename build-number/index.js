@@ -21,6 +21,7 @@ const getLastBuildNumber = async (prefix) => {
     // Fetch tag refs from github
     const response = await github.get(`/repos/${GITHUB_REPOSITORY}/git/refs/tags/${prefix}${tagPrefix}`);
     const tagRefs = response.data
+    console.log(tagRefs)
 
     // Filter refs
     const tagRegex = new RegExp(`/${prefix}${tagPrefix}(\\d+)$`)
