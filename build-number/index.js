@@ -21,6 +21,7 @@ const getLastBuildNumber = async (prefix) => {
     // Fetch tag refs from github
     const response = await github.get(`/repos/${GITHUB_REPOSITORY}/git/refs/tags/${prefix}${tagPrefix}`);
     const tagRefs = response.data
+    console.log(tagRefs)
 
     // Filter refs
     const tagRegex = new RegExp(`/${prefix}${tagPrefix}(\\d+)$`)
@@ -28,6 +29,7 @@ const getLastBuildNumber = async (prefix) => {
 
     // Extract versions
     const existingVersions = existingTags.map(t => parseInt(t.ref.match(/-(\d+)$/)[1]))
+    console.log(existingVersions)
 
     // Return max version
     return Math.max(existingVersions)
@@ -43,7 +45,7 @@ const getLastBuildNumber = async (prefix) => {
 
 const saveBuildNumber = async (prefix, buildNumber) => {
   let newRef = {
-    ref:`refs/tags/${prefix}${tagPrefix}${buildNumber}`, 
+    ref:`refs/tags/${prefix}${tagPrefix}${buildNumber}`,
     sha: GITHUB_SHA
   }
   try {
@@ -73,12 +75,12 @@ async function run() {
   try {
     const path = process.env.INPUT_PREFIX ? `.${process.env.INPUT_PREFIX}_build_number` : '.build_number';
     const prefix = process.env.INPUT_PREFIX ? `${process.env.INPUT_PREFIX}-` : '';
-    
+
     // See if we've already generated a build number
     if (fs.existsSync(path)) {
         const buildNumber = fs.readFileSync(path);
         console.log(`Build number already generated: ${buildNumber}`);
-        console.log(`::set-env name=BUILD_NUMBER::${buildNumber}`);
+        fs.writeFileSync(process.env.GITHUB_ENV, `BUILD_NUMBER=${buildNumber}`);
         console.log(`::set-output name=build_number::${buildNumber}`);
         return;
     }
@@ -108,12 +110,12 @@ async function run() {
     await saveBuildNumber(prefix, buildNumber)
 
     //Setting the output and a environment variable to new build number...
-    console.log(`::set-env name=BUILD_NUMBER::${buildNumber}`);
+    fs.writeFileSync(process.env.GITHUB_ENV, `BUILD_NUMBER=${buildNumber}`);
     console.log(`::set-output name=build_number::${buildNumber}`);
-    
+
     // Save to file
     fs.writeFileSync(path, buildNumber.toString());
-    
+
     console.log(`Cleaning up tags...`)
     await cleanupTags(prefix)
 
