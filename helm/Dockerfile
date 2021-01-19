@@ -9,7 +9,7 @@ RUN curl -L ${BASE_URL}/${HELM_FILE} |tar xvz && \
     chmod +x /usr/bin/helm && \
     rm -rf linux-amd64 && \
     # Init version 2 helm:
-    helm init --client-only
+    helm init --client-only --stable-repo-url https://kubernetes.oss-cn-hangzhou.aliyuncs.com/charts
 
 WORKDIR /usr/app/
 COPY . /usr/app/
