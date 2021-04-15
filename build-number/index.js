@@ -28,11 +28,16 @@ const getLastBuildNumber = async (prefix) => {
 
     // Extract versions
     const existingVersions = existingTags.map(t => parseInt(t.ref.match(/-(\d+)$/)[1]))
-    console.log('versions', existingVersions)
-    console.log('max', Math.max(...existingVersions))
 
     // Return max version
-    return Math.max(...existingVersions)
+    const maxVersion = Math.max(...existingVersions)
+
+    if (maxVersion > 0) {
+      return maxVersion
+    } else {
+      const error = new Error('Invalid Max Version')
+      throw error
+    }
   } catch (error) {
     // If non found, start with build 0
     if (error && error.response && error.response.status == 404) {
@@ -95,7 +100,6 @@ async function run() {
 
     // Get last build number
     const lastBuildNumber = await getLastBuildNumber(prefix);
-    console.log('rawbuildnumber', lastBuildNumber);
 
     if (lastBuildNumber > 0) {
       console.log(`Previous Build Number: ${lastBuildNumber}`);
