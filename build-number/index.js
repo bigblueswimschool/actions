@@ -29,10 +29,10 @@ const getLastBuildNumber = async (prefix) => {
     // Extract versions
     const existingVersions = existingTags.map(t => parseInt(t.ref.match(/-(\d+)$/)[1]))
     console.log('versions', existingVersions)
-    console.log('max', Math.max(existingVersions))
+    console.log('max', Math.max(...existingVersions))
 
     // Return max version
-    return Math.max(existingVersions)
+    return Math.max(...existingVersions)
   } catch (error) {
     // If non found, start with build 0
     if (error && error.response && error.response.status == 404) {
