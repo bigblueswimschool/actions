@@ -4,6 +4,8 @@ author: Big Blue Swim School
 icon: box
 color: blue-dark
 inputs:
+  clusterSecrets:
+    description: clusterSecrets
   name:
     description: Name of the service
   type:

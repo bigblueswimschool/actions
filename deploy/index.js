@@ -6,7 +6,12 @@ const util = require("util");
 const writeFile = util.promisify(fs.writeFile);
 const YAML = require('json-to-pretty-yaml');
 
-const getDeployment = (name, namespace, repository, version) => {
+const getDeployment = (name, namespace, repository, version, envFromString) => {
+  const envFrom = envFromString.split(',').map(o => {
+    "secretRef": {
+       "name": o
+    }
+  })
   const deployment = {
     "apiVersion": "apps/v1",
     "kind": "Deployment",
@@ -52,7 +57,7 @@ const getDeployment = (name, namespace, repository, version) => {
                          "containerPort": 3000
                       }
                    ],
-                   "envFrom": null,
+                   "envFrom": envFrom,
                    "resources": {
                       "requests": {
                          "cpu": "50m",
@@ -146,7 +151,10 @@ const getVersion = () => {
   return version
 }
 
-
+const getClusterSecrets = () => {
+  const clusterSecrets = core.getInput('clusterSecrets')
+  return clusterSecrets
+}
 
 /**
  * authGCloud() activates the service account using the ENV var
@@ -181,6 +189,7 @@ async function run() {
     try {
       // const context = github.context;
       const appName = getAppName()
+      const clusterSecrets = getClusterSecrets();
       const namespace = getNamespace()
       const repository = getRepository()
       const version = getVersion()
@@ -204,7 +213,7 @@ async function run() {
 
       await exec.exec('kubectl', args);
 
-      const deployment = getDeployment(appName, namespace, repository, version);
+      const deployment = getDeployment(appName, namespace, repository, version, clusterSecrets);
       await writeFile("./deployment.yml", deployment);
 
       const service = getService(appName, namespace);
