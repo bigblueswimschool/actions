@@ -179,7 +179,7 @@ async function run() {
       // Write values file
       await writeFile("./deployment.yml", deployment);
 
-      const deployArgs = [ '-f', 'deployment.yml' ]
+      const deployArgs = [ 'apply', '-f', 'deployment.yml' ]
 
       await exec.exec('kubectl', deployArgs);
 
