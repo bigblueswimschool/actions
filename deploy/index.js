@@ -6,6 +6,90 @@ const util = require("util");
 const writeFile = util.promisify(fs.writeFile);
 const YAML = require('json-to-pretty-yaml');
 
+const getDeployment = (name, namespace, repository, version) => {
+  const deployment = {
+    "apiVersion": "apps/v1",
+    "kind": "Deployment",
+    "metadata": {
+       "labels": {
+          "app": name
+       },
+       "name": name,
+       "namespace": namespace
+    },
+    "spec": {
+       "replicas": 1,
+       "revisionHistoryLimit": 10,
+       "selector": {
+          "matchLabels": {
+             "app": name
+          }
+       },
+       "strategy": {
+          "rollingUpdate": {
+             "maxSurge": 2,
+             "maxUnavailable": 0
+          },
+          "type": "RollingUpdate"
+       },
+       "minReadySeconds": 5,
+       "template": {
+          "metadata": {
+             "labels": {
+                "app": name
+             }
+          },
+          "spec": {
+             "containers": [
+                {
+                   "image": `${repository}/${name}:${version}`,
+                   "imagePullPolicy": "IfNotPresent",
+                   "tty": true,
+                   "stdin": true,
+                   "name": name,
+                   "ports": [
+                      {
+                         "containerPort": 3000
+                      }
+                   ],
+                   "envFrom": null,
+                   "resources": {
+                      "requests": {
+                         "cpu": "50m",
+                         "memory": "256Mi"
+                      }
+                   },
+                   "volumeMounts": [
+                      {
+                         "name": "google-cloud",
+                         "mountPath": "/usr/config/google.json",
+                         "subPath": "googleCloud.json",
+                         "readOnly": true
+                      }
+                   ]
+                }
+             ],
+             "dnsPolicy": "ClusterFirst",
+             "restartPolicy": "Always",
+             "schedulerName": "default-scheduler",
+             "securityContext": {},
+             "terminationGracePeriodSeconds": 30,
+             "volumes": [
+                {
+                   "name": "google-cloud",
+                   "secret": {
+                      "secretName": "google-cloud"
+                   }
+                }
+             ]
+          }
+       }
+    }
+  }
+
+  yaml = YAML.stringify(deployment)
+  return yaml
+}
 /**
  * Input fetchers
  */
@@ -22,26 +106,17 @@ const getNamespace = () => {
   return namespace || 'default'
 }
 
-const getChart = () => {
-  const chart = core.getInput('chart', { required: true })
-  return `/usr/app/charts/${chart}`
+const getRepository = () => {
+  const repository = core.getInput('repository')
+  return repository
 }
 
-const getValues = () => {
-  let yamlValues = core.getInput('values')
-  let jsonValues = core.getInput('jsonValues')
-
-  if (yamlValues) {
-    console.log('yaml values provided')
-    return yamlValues
-  } else if (jsonValues) {
-    console.log('json values provided')
-    jsonValues = jsonValues || {}
-    yamlValues = YAML.stringify(JSON.parse(jsonValues))
-    return yamlValues
-  }
-  return null
+const getVersion = () => {
+  const version = core.getInput('version')
+  return version
 }
+
+
 
 /**
  * authGCloud() activates the service account using the ENV var
@@ -77,11 +152,15 @@ async function run() {
       // const context = github.context;
       const appName = getAppName()
       const namespace = getNamespace()
+      const repository = getRepository()
+      const version = getVersion()
       // const chart = getChart()
       // const values = getValues()
 
       core.debug(`param: appName = "${appName}"`);
       core.debug(`param: namespace = "${namespace}"`);
+      core.debug(`param: repository = "${repository}"`);
+      core.debug(`param: version = "${version}"`);
       // core.debug(`param: chart = "${chart}"`);
       // core.debug(`param: values = "${values}"`);
 
@@ -95,8 +174,14 @@ async function run() {
 
       await exec.exec('kubectl', args);
 
+      const deployment = getDeployment(name, namespace, repository, version);
+
       // Write values file
-      // await writeFile("./values.yml", values);
+      await writeFile("./deployment.yml", deployment);
+
+      const deployArgs = [ '-f', 'deployment.yml' ]
+
+      await exec.exec('kubectl', deployArgs);
 
       // Setup command options and arguments.
       // const args = [
