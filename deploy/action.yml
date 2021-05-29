@@ -1,0 +1,13 @@
+name: Big Blue Deploy Action
+description: Deploys a kubernetes service
+author: Big Blue Swim School
+icon: box
+color: blue-dark
+inputs:
+  type:
+    description: Service Type - express | nestjs
+  namespace:
+    description: Kubernetes namespace name.
+runs:
+  using: docker
+  image: Dockerfile
