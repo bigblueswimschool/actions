@@ -91,6 +91,10 @@ async function run() {
       // Get Kube Credentials
       await getKubeCredentials()
 
+      const args = [ 'cluster-info' ]
+
+      await exec.exec('kubectl', args);
+
       // Write values file
       // await writeFile("./values.yml", values);
 
