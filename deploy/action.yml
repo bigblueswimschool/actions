@@ -1,11 +1,11 @@
-name: Big Blue Deploy Action
-description: Deploys a kubernetes service
+name: Big Blue Helm Action
+description: Deploys a helm chart
 author: Big Blue Swim School
 icon: box
 color: blue-dark
 inputs:
   type:
-    description: Service Type - express | nestjs
+    description: Helm release name. Will be combined with track if set. (required)
   namespace:
     description: Kubernetes namespace name.
 runs:

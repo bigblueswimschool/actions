@@ -1,6 +1,10 @@
 const core = require("@actions/core");
 const github = require("@actions/github");
 const exec = require("@actions/exec");
+const fs = require("fs");
+const util = require("util");
+const writeFile = util.promisify(fs.writeFile);
+const YAML = require('json-to-pretty-yaml');
 
 /**
  * Input fetchers
@@ -18,9 +22,25 @@ const getNamespace = () => {
   return namespace || 'default'
 }
 
-const getType = () => {
-  const type = core.getInput('type')
-  return type || 'express'
+const getChart = () => {
+  const chart = core.getInput('chart', { required: true })
+  return `/usr/app/charts/${chart}`
+}
+
+const getValues = () => {
+  let yamlValues = core.getInput('values')
+  let jsonValues = core.getInput('jsonValues')
+
+  if (yamlValues) {
+    console.log('yaml values provided')
+    return yamlValues
+  } else if (jsonValues) {
+    console.log('json values provided')
+    jsonValues = jsonValues || {}
+    yamlValues = YAML.stringify(JSON.parse(jsonValues))
+    return yamlValues
+  }
+  return null
 }
 
 /**
@@ -57,17 +77,40 @@ async function run() {
       // const context = github.context;
       const appName = getAppName()
       const namespace = getNamespace()
-      const type = getType()
+      // const chart = getChart()
+      // const values = getValues()
 
       core.debug(`param: appName = "${appName}"`);
       core.debug(`param: namespace = "${namespace}"`);
-      core.debug(`param: type = "${type}"`);
+      // core.debug(`param: chart = "${chart}"`);
+      // core.debug(`param: values = "${values}"`);
 
       // Authenticate Google Cloud
       await authGCloud()
 
       // Get Kube Credentials
       await getKubeCredentials()
+
+      // Write values file
+      // await writeFile("./values.yml", values);
+
+      // Setup command options and arguments.
+      // const args = [
+      //     "upgrade",
+      //     appName,
+      //     chart,
+      //     "--install",
+      //     "--namespace",
+      //     namespace,
+      //     "--values",
+      //     "values.yml",
+      //     "--debug",
+      //     "--dry-run"
+      // ];
+
+      // process.env.HELM_HOME = "/root/.helm/"
+
+      // await exec.exec('helm', args);
 
     } catch (error) {
       core.error(error);
