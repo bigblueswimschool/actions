@@ -21,7 +21,6 @@ const getLastBuildNumber = async (prefix) => {
     // Fetch tag refs from github
     const response = await github.get(`/repos/${GITHUB_REPOSITORY}/git/refs/tags/${prefix}${tagPrefix}`);
     const tagRefs = response.data
-    console.log(tagRefs)
 
     // Filter refs
     const tagRegex = new RegExp(`/${prefix}${tagPrefix}(\\d+)$`)
@@ -29,10 +28,16 @@ const getLastBuildNumber = async (prefix) => {
 
     // Extract versions
     const existingVersions = existingTags.map(t => parseInt(t.ref.match(/-(\d+)$/)[1]))
-    console.log(existingVersions)
 
     // Return max version
-    return Math.max(existingVersions)
+    const maxVersion = Math.max(...existingVersions)
+
+    if (maxVersion > 0) {
+      return maxVersion
+    } else {
+      const error = new Error('Invalid Max Version')
+      throw error
+    }
   } catch (error) {
     // If non found, start with build 0
     if (error && error.response && error.response.status == 404) {
