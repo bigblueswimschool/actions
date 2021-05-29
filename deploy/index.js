@@ -8,8 +8,10 @@ const YAML = require('json-to-pretty-yaml');
 
 const getDeployment = (name, namespace, repository, version, envFromString) => {
   const envFrom = envFromString.split(',').map(o => {
-    "secretRef": {
-       "name": o.trim()
+    return {
+      "secretRef": {
+        "name": o.trim()
+      }
     }
   })
   const deployment = {
