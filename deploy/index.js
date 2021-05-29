@@ -68,11 +68,17 @@ const getDeployment = (name, namespace, repository, version, envFromString) => {
                    },
                    "volumeMounts": [
                       {
-                         "name": "google-cloud",
-                         "mountPath": "/usr/config/google.json",
-                         "subPath": "googleCloud.json",
+                         "name": "elastic-apm-node",
+                         "mountPath": "/usr/config/elastic-apm-node.js",
+                         "subPath": "elastic-apm-node.js",
                          "readOnly": true
-                      }
+                      },
+                      {
+                        "name": "google-cloud",
+                        "mountPath": "/usr/config/google.json",
+                        "subPath": "googleCloud.json",
+                        "readOnly": true
+                     }
                    ]
                 }
              ],
@@ -82,6 +88,12 @@ const getDeployment = (name, namespace, repository, version, envFromString) => {
              "securityContext": {},
              "terminationGracePeriodSeconds": 30,
              "volumes": [
+                {
+                  "name": "elastic-apm-node",
+                  "secret": {
+                    "secretName": "elastic-apm-node"
+                  }
+                },
                 {
                    "name": "google-cloud",
                    "secret": {
