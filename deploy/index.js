@@ -91,7 +91,7 @@ const getDeployment = (name, namespace, repository, version) => {
   return yaml
 }
 
-const getService = (name) => {
+const getService = (name, namespace) => {
   const service = {
     "apiVersion": "v1",
     "kind": "Service",
@@ -207,7 +207,7 @@ async function run() {
       const deployment = getDeployment(appName, namespace, repository, version);
       await writeFile("./deployment.yml", deployment);
 
-      const service = getService(appName, namespace, repository, version);
+      const service = getService(appName, namespace);
       await writeFile("./service.yml", service);
 
       const deployArgs = [ 'apply', '-f', 'deployment.yml' ]
