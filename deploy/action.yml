@@ -4,10 +4,16 @@ author: Big Blue Swim School
 icon: box
 color: blue-dark
 inputs:
+  name:
+    description: Name of the service
   type:
     description: Helm release name. Will be combined with track if set. (required)
   namespace:
     description: Kubernetes namespace name.
+  repository:
+    description: Repository
+  version:
+    description: Repository
 runs:
   using: docker
   image: Dockerfile

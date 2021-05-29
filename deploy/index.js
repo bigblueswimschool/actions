@@ -174,7 +174,7 @@ async function run() {
 
       await exec.exec('kubectl', args);
 
-      const deployment = getDeployment(name, namespace, repository, version);
+      const deployment = getDeployment(appName, namespace, repository, version);
 
       // Write values file
       await writeFile("./deployment.yml", deployment);
