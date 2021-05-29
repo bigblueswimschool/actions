@@ -97,8 +97,10 @@ const getService = (name) => {
     "kind": "Service",
     "metadata": {
        "name": name,
-       "namespace": "develop",
-       "cloud.google.com/neg": `{ \"exposed_ports\": { \"3000\": { \"name\": \"${name}-neg\" } } }`
+       "namespace": namespace,
+       "annotations": {
+        "cloud.google.com/neg": `{ \"exposed_ports\": { \"3000\": { \"name\": \"${name}-neg\" } } }`
+       }
     },
     "spec": {
        "ports": [
