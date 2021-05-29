@@ -3,6 +3,7 @@ kind: Service
 metadata:
   name: {{ .Values.name }}
   namespace: {{ .Values.namespace | default "default" }}
+  cloud.google.com/neg: '{ "exposed_ports": { "{{ .Values.port | default 3000 }}": { "name": "{{ .Values.name }}-neg" } } }'
 spec:
   ports:
     - name: http
