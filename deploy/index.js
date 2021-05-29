@@ -1,10 +1,6 @@
 const core = require("@actions/core");
 const github = require("@actions/github");
 const exec = require("@actions/exec");
-const fs = require("fs");
-const util = require("util");
-const writeFile = util.promisify(fs.writeFile);
-const YAML = require('json-to-pretty-yaml');
 
 /**
  * Input fetchers
