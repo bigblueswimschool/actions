@@ -90,6 +90,34 @@ const getDeployment = (name, namespace, repository, version) => {
   yaml = YAML.stringify(deployment)
   return yaml
 }
+
+const getService = (name) => {
+  const service = {
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+       "name": name,
+       "namespace": "develop",
+       "cloud.google.com/neg": `{ \"exposed_ports\": { \"3000\": { \"name\": \"${name}-neg\" } } }`
+    },
+    "spec": {
+       "ports": [
+          {
+             "name": "http",
+             "port": 3000,
+             "protocol": "TCP",
+             "targetPort": 3000
+          }
+       ],
+       "selector": {
+          "app": name
+       },
+       "type": "NodePort"
+    }
+  }
+  yaml = YAML.stringify(service)
+  return yaml
+}
 /**
  * Input fetchers
  */
@@ -175,13 +203,16 @@ async function run() {
       await exec.exec('kubectl', args);
 
       const deployment = getDeployment(appName, namespace, repository, version);
-
-      // Write values file
       await writeFile("./deployment.yml", deployment);
 
-      const deployArgs = [ 'apply', '-f', 'deployment.yml' ]
+      const service = getService(appName, namespace, repository, version);
+      await writeFile("./service.yml", service);
 
+      const deployArgs = [ 'apply', '-f', 'deployment.yml' ]
       await exec.exec('kubectl', deployArgs);
+
+      const serviceArgs = [ 'apply', '-f', 'service.yml' ]
+      await exec.exec('kubectl', serviceArgs);
 
       // Setup command options and arguments.
       // const args = [
