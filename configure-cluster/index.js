@@ -5,6 +5,7 @@ const fs = require("fs");
 const util = require("util");
 const writeFile = util.promisify(fs.writeFile);
 const readDir = util.promisify(fs.readdir);
+const readFile = util.promisify(fs.readFile);
 const YAML = require('json-to-pretty-yaml');
 const Handlebars = require('handlebars');
 
@@ -22,6 +23,18 @@ const getAppName = () => {
 const getNamespace = () => {
   const namespace = core.getInput('namespace')
   return namespace
+}
+
+const async generateConfigs = (namespace) => {
+   const files = await readDir('.').filter(o => o.substr(-3, 0) === 'hbs')
+   for (let i = 0; i < files.length; i++) {
+      const file = files[0]
+      const templateContents = await readFile(file)
+      console.log(templateContents)
+      const template = Handlebars.compile(templateContents)
+      const output = template.compile({ namespace })
+      console.log(output)
+   }
 }
 
 /**
@@ -67,8 +80,7 @@ async function run() {
       // Get Kube Credentials
       await getKubeCredentials()
 
-      const files = await readDir('.')
-      console.log(files)
+      await generateConfigs(namespace)
 
     } catch (error) {
       core.error(error);
