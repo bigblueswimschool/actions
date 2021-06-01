@@ -41,7 +41,7 @@ const generateConfigs = async (namespace, values) => {
       const templateContents = await readFile(file)
       console.log(templateContents.toString())
       const template = Handlebars.compile(templateContents.toString())
-      const output = template.compile({ namespace, ...values })
+      const output = template({ namespace, ...values })
       console.log(output)
    }
 }
