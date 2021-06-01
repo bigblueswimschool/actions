@@ -38,17 +38,18 @@ const getValues = () => {
 const generateConfigs = async (namespace, values) => {
    const files = await readDir('.')
    const templateFiles = files.filter(o => o.substr(-3, 3) === 'hbs')
-
+   const configs = []
    // Process Templates
    for (let i = 0; i < templateFiles.length; i++) {
       const file = templateFiles[i]
       const templateContents = await readFile(file)
       const template = Handlebars.compile(templateContents.toString(), { noEscape: true })
       const output = template({ namespace, ...values })
-      console.log(output)
-      const newFile = file.substr(0, file.length - 3)
-      console.log(newFile)
+      const newFile = file.substr(0, file.length - 4)
+      await writeFile(newFile, output)
+      configs.push(newFile)
    }
+   return configs
 }
 
 /**
@@ -95,7 +96,13 @@ async function run() {
       // Get Kube Credentials
       await getKubeCredentials()
 
-      await generateConfigs(namespace, values)
+      const configs = await generateConfigs(namespace, values)
+
+      for (let i = 0; i < configs.length; i++) {
+         const config = configs[i]
+         const args = [ 'apply', '-f', config ]
+         await exec.exec('kubectl', args)
+      }
 
     } catch (error) {
       core.error(error);
