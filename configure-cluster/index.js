@@ -9,6 +9,10 @@ const readFile = util.promisify(fs.readFile);
 const YAML = require('json-to-pretty-yaml');
 const Handlebars = require('handlebars');
 
+Handlebars.registerHelper('base64', (string) => {
+   string.toString('base64')
+})
+
 /**
  * Input fetchers
  */
