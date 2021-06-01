@@ -10,7 +10,8 @@ const YAML = require('json-to-pretty-yaml');
 const Handlebars = require('handlebars');
 
 Handlebars.registerHelper('base64', (string) => {
-   string.toString('base64')
+   const buffer = new Buffer(string)
+   return buffer.toString('base64')
 })
 
 /**
