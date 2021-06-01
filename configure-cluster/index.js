@@ -8,10 +8,10 @@ const readDir = util.promisify(fs.readdir);
 const readFile = util.promisify(fs.readFile);
 const YAML = require('json-to-pretty-yaml');
 const Handlebars = require('handlebars');
+const { base64encode } = require('nodejs-base64');
 
 Handlebars.registerHelper('base64', (string) => {
-   const buffer = new Buffer(string)
-   return buffer.toString('base64')
+   return base64encode(string)
 })
 
 /**
@@ -37,10 +37,9 @@ const getValues = () => {
 
 const generateConfigs = async (namespace, values) => {
    const files = await readDir('.')
-   console.log(files)
-
    const templateFiles = files.filter(o => o.substr(-3, 3) === 'hbs')
-   console.log(templateFiles)
+
+   // Process Templates
    for (let i = 0; i < templateFiles.length; i++) {
       const file = templateFiles[i]
       const templateContents = await readFile(file)

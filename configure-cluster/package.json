@@ -23,6 +23,7 @@
     "fs": "0.0.1-security",
     "handlebars": "^4.7.7",
     "json-to-pretty-yaml": "^1.2.2",
+    "nodejs-base64": "^2.0.0",
     "util": "^0.12.3"
   }
 }
