@@ -39,8 +39,8 @@ const generateConfigs = async (namespace, values) => {
    for (let i = 0; i < templateFiles.length; i++) {
       const file = templateFiles[i]
       const templateContents = await readFile(file)
-      console.log(templateContents)
-      const template = Handlebars.compile(templateContents)
+      console.log(templateContents.toString())
+      const template = Handlebars.compile(templateContents.toString())
       const output = template.compile({ namespace, ...values })
       console.log(output)
    }
