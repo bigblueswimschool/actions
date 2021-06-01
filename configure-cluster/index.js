@@ -43,10 +43,11 @@ const generateConfigs = async (namespace, values) => {
    for (let i = 0; i < templateFiles.length; i++) {
       const file = templateFiles[i]
       const templateContents = await readFile(file)
-      console.log(templateContents.toString())
       const template = Handlebars.compile(templateContents.toString(), { noEscape: true })
       const output = template({ namespace, ...values })
       console.log(output)
+      const newFile = file.substr(0, -3)
+      console.log(newFile)
    }
 }
 
