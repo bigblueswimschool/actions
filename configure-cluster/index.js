@@ -31,9 +31,10 @@ const getValues = () => {
 }
 
 const generateConfigs = async (namespace, values) => {
-   const files = await readDir('.').filter(o => o.substr(-3, 0) === 'hbs')
-   for (let i = 0; i < files.length; i++) {
-      const file = files[0]
+   const files = await readDir('.')
+   const templateFiles = files.filter(o => o.substr(-3, 0) === 'hbs')
+   for (let i = 0; i < templateFiles.length; i++) {
+      const file = templateFiles[i]
       const templateContents = await readFile(file)
       console.log(templateContents)
       const template = Handlebars.compile(templateContents)
