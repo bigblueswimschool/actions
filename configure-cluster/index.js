@@ -44,7 +44,7 @@ const generateConfigs = async (namespace, values) => {
       const file = templateFiles[i]
       const templateContents = await readFile(file)
       console.log(templateContents.toString())
-      const template = Handlebars.compile(templateContents.toString())
+      const template = Handlebars.compile(templateContents.toString(), { noEscape: true })
       const output = template({ namespace, ...values })
       console.log(output)
    }
