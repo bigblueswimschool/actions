@@ -207,15 +207,11 @@ async function run() {
       const namespace = getNamespace()
       const repository = getRepository()
       const version = getVersion()
-      // const chart = getChart()
-      // const values = getValues()
 
       core.debug(`param: appName = "${appName}"`);
       core.debug(`param: namespace = "${namespace}"`);
       core.debug(`param: repository = "${repository}"`);
       core.debug(`param: version = "${version}"`);
-      // core.debug(`param: chart = "${chart}"`);
-      // core.debug(`param: values = "${values}"`);
 
       // Authenticate Google Cloud
       await authGCloud()
@@ -238,24 +234,6 @@ async function run() {
 
       const serviceArgs = [ 'apply', '-f', 'service.yml' ]
       await exec.exec('kubectl', serviceArgs);
-
-      // Setup command options and arguments.
-      // const args = [
-      //     "upgrade",
-      //     appName,
-      //     chart,
-      //     "--install",
-      //     "--namespace",
-      //     namespace,
-      //     "--values",
-      //     "values.yml",
-      //     "--debug",
-      //     "--dry-run"
-      // ];
-
-      // process.env.HELM_HOME = "/root/.helm/"
-
-      // await exec.exec('helm', args);
 
     } catch (error) {
       core.error(error);

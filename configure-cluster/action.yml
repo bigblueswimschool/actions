@@ -1,0 +1,11 @@
+name: Big Blue Cluster Configuration Action
+description: Configures a Cluster
+author: Big Blue Swim School
+icon: box
+color: blue-dark
+inputs:
+  clusterSecrets:
+    description: clusterSecrets
+runs:
+  using: docker
+  image: Dockerfile
