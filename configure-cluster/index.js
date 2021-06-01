@@ -4,7 +4,9 @@ const exec = require("@actions/exec");
 const fs = require("fs");
 const util = require("util");
 const writeFile = util.promisify(fs.writeFile);
+const readDir = util.promisify(fs.readdir);
 const YAML = require('json-to-pretty-yaml');
+const Handlebars = require('handlebars');
 
 /**
  * Input fetchers
@@ -17,9 +19,9 @@ const getAppName = () => {
   return appName
 }
 
-const getClusterSecrets = () => {
-  const clusterSecrets = core.getInput('clusterSecrets')
-  return clusterSecrets
+const getNamespace = () => {
+  const namespace = core.getInput('namespace')
+  return namespace
 }
 
 /**
@@ -55,7 +57,7 @@ async function run() {
     try {
       // const context = github.context;
       const appName = getAppName()
-      const clusterSecrets = getClusterSecrets();
+      const namespace = getNamespace();
 
       core.debug(`param: appName = "${appName}"`);
 
@@ -65,9 +67,8 @@ async function run() {
       // Get Kube Credentials
       await getKubeCredentials()
 
-      const args = [ '-la' ]
-
-      await exec.exec('ls', args);
+      const files = await readDir('.')
+      console.log(files)
 
     } catch (error) {
       core.error(error);

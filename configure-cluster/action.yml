@@ -4,8 +4,10 @@ author: Big Blue Swim School
 icon: box
 color: blue-dark
 inputs:
-  clusterSecrets:
-    description: clusterSecrets
+  namespace:
+    description: Namespace
+  values:
+    description: Helm chart values (JSON String)
 runs:
   using: docker
   image: Dockerfile
