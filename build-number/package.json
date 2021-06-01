@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "~1.2.5",
+    "@actions/core": "~1.2.6",
     "async": "~3.2.0",
     "axios": "~0.20.0"
   }
