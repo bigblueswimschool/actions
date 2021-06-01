@@ -25,7 +25,7 @@ const getNamespace = () => {
   return namespace
 }
 
-const async generateConfigs = (namespace) => {
+const generateConfigs = async (namespace) => {
    const files = await readDir('.').filter(o => o.substr(-3, 0) === 'hbs')
    for (let i = 0; i < files.length; i++) {
       const file = files[0]
