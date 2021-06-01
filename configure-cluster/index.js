@@ -32,7 +32,10 @@ const getValues = () => {
 
 const generateConfigs = async (namespace, values) => {
    const files = await readDir('.')
-   const templateFiles = files.filter(o => o.substr(-3, 0) === 'hbs')
+   console.log(files)
+
+   const templateFiles = files.filter(o => o.substr(-3, 3) === 'hbs')
+   console.log(templateFiles)
    for (let i = 0; i < templateFiles.length; i++) {
       const file = templateFiles[i]
       const templateContents = await readFile(file)
