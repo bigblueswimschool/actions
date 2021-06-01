@@ -25,14 +25,19 @@ const getNamespace = () => {
   return namespace
 }
 
-const generateConfigs = async (namespace) => {
+const getValues = () => {
+   const values = core.getInput('values')
+   return JSON.parse(values)
+}
+
+const generateConfigs = async (namespace, values) => {
    const files = await readDir('.').filter(o => o.substr(-3, 0) === 'hbs')
    for (let i = 0; i < files.length; i++) {
       const file = files[0]
       const templateContents = await readFile(file)
       console.log(templateContents)
       const template = Handlebars.compile(templateContents)
-      const output = template.compile({ namespace })
+      const output = template.compile({ namespace, ...values })
       console.log(output)
    }
 }
@@ -71,6 +76,7 @@ async function run() {
       // const context = github.context;
       const appName = getAppName()
       const namespace = getNamespace();
+      const values = getValues();
 
       core.debug(`param: appName = "${appName}"`);
 
@@ -80,7 +86,7 @@ async function run() {
       // Get Kube Credentials
       await getKubeCredentials()
 
-      await generateConfigs(namespace)
+      await generateConfigs(namespace, values)
 
     } catch (error) {
       core.error(error);
