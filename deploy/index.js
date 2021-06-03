@@ -6,14 +6,17 @@ const util = require("util");
 const writeFile = util.promisify(fs.writeFile);
 const YAML = require('json-to-pretty-yaml');
 
-const getDeployment = (name, namespace, repository, version, envFromString) => {
-  const envFrom = envFromString.split(',').map(o => {
+const getDeployment = (name, namespace, repository, version, clusterSecrets) => {
+  const secrets = clusterSecrets.split(',').map(o => o.trim())
+
+  const envFrom = secrets.map(o => {
     return {
       "secretRef": {
-        "name": o.trim()
+        "name": o
       }
     }
   })
+
   const deployment = {
     "apiVersion": "apps/v1",
     "kind": "Deployment",

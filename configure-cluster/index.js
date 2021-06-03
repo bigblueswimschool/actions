@@ -35,19 +35,20 @@ const getValues = () => {
    return JSON.parse(values)
 }
 
-const generateConfigs = async (namespace, values) => {
-   const files = await readDir('.')
+const generateSecrets = async (namespace, values) => {
+   const files = await readDir('./secrets')
    const templateFiles = files.filter(o => o.substr(-3, 3) === 'hbs')
    const configs = []
    // Process Templates
    for (let i = 0; i < templateFiles.length; i++) {
       const file = templateFiles[i]
-      const templateContents = await readFile(file)
-      const template = Handlebars.compile(templateContents.toString(), { noEscape: true })
-      const output = template({ namespace, ...values })
-      const newFile = file.substr(0, file.length - 4)
-      await writeFile(newFile, output)
-      configs.push(newFile)
+      console.log(file)
+      // const templateContents = await readFile(file)
+      // const template = Handlebars.compile(templateContents.toString(), { noEscape: true })
+      // const output = template({ namespace, ...values })
+      // const newFile = file.substr(0, file.length - 4)
+      // await writeFile(newFile, output)
+      // configs.push(newFile)
    }
    return configs
 }
@@ -96,13 +97,13 @@ async function run() {
       // Get Kube Credentials
       await getKubeCredentials()
 
-      const configs = await generateConfigs(namespace, values)
+      const configs = await generateSecrets(namespace, values)
 
-      for (let i = 0; i < configs.length; i++) {
-         const config = configs[i]
-         const args = [ 'apply', '-f', config ]
-         await exec.exec('kubectl', args)
-      }
+      // for (let i = 0; i < configs.length; i++) {
+      //    const config = configs[i]
+      //    const args = [ 'apply', '-f', config ]
+      //    await exec.exec('kubectl', args)
+      // }
 
     } catch (error) {
       core.error(error);
