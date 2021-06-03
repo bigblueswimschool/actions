@@ -35,6 +35,21 @@ const getValues = () => {
    return JSON.parse(values)
 }
 
+const generateRabbitMQ = async (namespace, values) => {
+   const files = await readDir('./rabbitmq')
+   const templateFiles = files.filter(o => o.substr(-3, 3) === 'hbs')
+   // Process Templates
+   for (let i = 0; i < templateFiles.length; i++) {
+      const file = templateFiles[i]
+      const templateContents = await readFile(`./rabbitmq/${file}`)
+      const template = Handlebars.compile(templateContents.toString(), { noEscape: true })
+      const output = template({ namespace, ...values })
+      const newFile = file.substr(0, file.length - 4)
+      console.log(`Writing ./rabbitmq/${newFile}...`)
+      await writeFile(`./rabbitmq/${newFile}`, output)
+   }
+}
+
 const generateSecrets = async (namespace, values) => {
    const files = await readDir('./secrets')
    const templateFiles = files.filter(o => o.substr(-3, 3) === 'hbs')
@@ -94,7 +109,8 @@ async function run() {
       // Get Kube Credentials
       await getKubeCredentials()
 
-      const configs = await generateSecrets(namespace, values)
+      await generateRabbitMQ(namespace, values)
+      await generateSecrets(namespace, values)
 
       console.log('Applying Secrets...')
       const secretsArgs = [ 'apply', '-f', './secrets' ]
