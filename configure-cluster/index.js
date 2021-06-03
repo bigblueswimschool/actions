@@ -38,19 +38,16 @@ const getValues = () => {
 const generateSecrets = async (namespace, values) => {
    const files = await readDir('./secrets')
    const templateFiles = files.filter(o => o.substr(-3, 3) === 'hbs')
-   const configs = []
    // Process Templates
    for (let i = 0; i < templateFiles.length; i++) {
       const file = templateFiles[i]
-      console.log(file)
-      // const templateContents = await readFile(file)
-      // const template = Handlebars.compile(templateContents.toString(), { noEscape: true })
-      // const output = template({ namespace, ...values })
-      // const newFile = file.substr(0, file.length - 4)
-      // await writeFile(newFile, output)
-      // configs.push(newFile)
+      const templateContents = await readFile(`./secrets/${file}`)
+      const template = Handlebars.compile(templateContents.toString(), { noEscape: true })
+      const output = template({ namespace, ...values })
+      const newFile = file.substr(0, file.length - 4)
+      console.log(`Writing ./secrets/${newFile}...`)
+      await writeFile(`./secrets/${newFile}`, output)
    }
-   return configs
 }
 
 /**
@@ -98,6 +95,8 @@ async function run() {
       await getKubeCredentials()
 
       const configs = await generateSecrets(namespace, values)
+      const secretsArgs = [ 'apply', '-f', './secrets' ]
+      await exec.exec('kubectl', secretsArgs)
 
       // for (let i = 0; i < configs.length; i++) {
       //    const config = configs[i]
