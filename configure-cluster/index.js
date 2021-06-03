@@ -95,8 +95,14 @@ async function run() {
       await getKubeCredentials()
 
       const configs = await generateSecrets(namespace, values)
+
+      console.log('Applying Secrets...')
       const secretsArgs = [ 'apply', '-f', './secrets' ]
       await exec.exec('kubectl', secretsArgs)
+
+      console.log('Applying RabbitMQ...')
+      const rabbitmqArgs = [ 'apply', '-f', './rabbitmq' ]
+      await exec.exec('kubectl', rabbitmqArgs)
 
       // for (let i = 0; i < configs.length; i++) {
       //    const config = configs[i]
