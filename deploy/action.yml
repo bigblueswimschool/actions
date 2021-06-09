@@ -4,18 +4,24 @@ author: Big Blue Swim School
 icon: box
 color: blue-dark
 inputs:
+  apm:
+    description: Enable APM (default: true)
   clusterSecrets:
     description: clusterSecrets
   name:
     description: Name of the service
+  region:
+    description: Region of the deployment
   type:
-    description: Helm release name. Will be combined with track if set. (required)
+    description: Service Types (express | nestjs)
   namespace:
     description: Kubernetes namespace name.
   repository:
     description: Repository
   version:
     description: Repository
+  readinessPath:
+    description: Path to determine when service is active
 runs:
   using: docker
   image: Dockerfile

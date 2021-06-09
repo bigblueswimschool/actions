@@ -6,7 +6,7 @@ const util = require("util");
 const writeFile = util.promisify(fs.writeFile);
 const YAML = require('json-to-pretty-yaml');
 
-const getDeployment = (name, namespace, repository, version, clusterSecrets) => {
+const getDeployment = (type, name, namespace, repository, version, clusterSecrets, readinessPath, apm) => {
   const secrets = clusterSecrets.split(',').map(o => o.trim())
 
   const envFrom = secrets.map(o => {
@@ -16,6 +16,50 @@ const getDeployment = (name, namespace, repository, version, clusterSecrets) => 
       }
     }
   })
+
+  const containerPorts = [{ containerPort: 3000 }]
+
+  if (type === 'nestjs') {
+     containerPorts.push({ containerPort: 3001 })
+  }
+
+  const volumeMounts = []
+  const volumes = []
+
+  if (apm) {
+    volumeMounts.push({
+      "name": "elastic-apm-node",
+      "mountPath": "/usr/config/elastic-apm-node.js",
+      "subPath": "elastic-apm-node.js",
+      "readOnly": true
+    })
+
+    volumes.push({
+      "name": "elastic-apm-node",
+      "secret": {
+        "secretName": "elastic-apm-node"
+      }
+    })
+  }
+
+
+  const googleIndex = secrets.findIndex(o === 'google')
+
+  if (googleIndex >= 0) {
+    volumeMounts.push({
+      "name": "google-cloud",
+      "mountPath": "/usr/config/google.json",
+      "subPath": "googleCloud.json",
+      "readOnly": true
+    })
+
+    volumes.push({
+      "name": "google-cloud",
+      "secret": {
+         "secretName": "google-cloud"
+      }
+    })
+  }
 
   const deployment = {
     "apiVersion": "apps/v1",
@@ -57,11 +101,16 @@ const getDeployment = (name, namespace, repository, version, clusterSecrets) => 
                    "tty": true,
                    "stdin": true,
                    "name": name,
-                   "ports": [
-                      {
-                         "containerPort": 3000
-                      }
-                   ],
+                   "ports": containerPorts,
+                   "readinessProbe": {
+                      "httpGet": {
+                         "path": readinessPath,
+                         "port": 3000
+                      },
+                      initialDelaySeconds: 5,
+                      periodSeconds: 5,
+                      successThreshold: 1
+                   },
                    "envFrom": envFrom,
                    "resources": {
                       "requests": {
@@ -69,20 +118,7 @@ const getDeployment = (name, namespace, repository, version, clusterSecrets) => 
                          "memory": "256Mi"
                       }
                    },
-                   "volumeMounts": [
-                      {
-                         "name": "elastic-apm-node",
-                         "mountPath": "/usr/config/elastic-apm-node.js",
-                         "subPath": "elastic-apm-node.js",
-                         "readOnly": true
-                      },
-                      {
-                        "name": "google-cloud",
-                        "mountPath": "/usr/config/google.json",
-                        "subPath": "googleCloud.json",
-                        "readOnly": true
-                     }
-                   ]
+                   "volumeMounts": volumeMounts
                 }
              ],
              "dnsPolicy": "ClusterFirst",
@@ -90,20 +126,7 @@ const getDeployment = (name, namespace, repository, version, clusterSecrets) => 
              "schedulerName": "default-scheduler",
              "securityContext": {},
              "terminationGracePeriodSeconds": 30,
-             "volumes": [
-                {
-                  "name": "elastic-apm-node",
-                  "secret": {
-                    "secretName": "elastic-apm-node"
-                  }
-                },
-                {
-                   "name": "google-cloud",
-                   "secret": {
-                      "secretName": "google-cloud"
-                   }
-                }
-             ]
+             "volumes": volumes
           }
        }
     }
@@ -113,7 +136,25 @@ const getDeployment = (name, namespace, repository, version, clusterSecrets) => 
   return yaml
 }
 
-const getService = (name, namespace) => {
+const getService = (type, name, namespace, region) => {
+  const ports = [
+    {
+      name: 'http',
+      port: 3000,
+      protocol: 'TCP',
+      targetPort: 3000
+    }
+  ]
+
+  if (type === 'nestjs') {
+     ports.push({
+       name: 'tcp',
+       port: 3001,
+       protocol: 'TCP',
+       targetPort: 3001
+     })
+  }
+
   const service = {
     "apiVersion": "v1",
     "kind": "Service",
@@ -121,18 +162,11 @@ const getService = (name, namespace) => {
        "name": name,
        "namespace": namespace,
        "annotations": {
-        "cloud.google.com/neg": `{ \"exposed_ports\": { \"3000\": { \"name\": \"${name}-neg\" } } }`
+        "cloud.google.com/neg": `{ \"exposed_ports\": { \"3000\": { \"name\": \"${region}-${name}\" } } }`
        }
     },
     "spec": {
-       "ports": [
-          {
-             "name": "http",
-             "port": 3000,
-             "protocol": "TCP",
-             "targetPort": 3000
-          }
-       ],
+       "ports": ports,
        "selector": {
           "app": name
        },
@@ -153,15 +187,30 @@ const getAppName = () => {
   return appName
 }
 
+const getApm = () => {
+   const apm = core.getInput('apm')
+   return apm || true
+}
+
 const getNamespace = () => {
   const namespace = core.getInput('namespace')
   return namespace || 'default'
 }
 
+const getRegion = () => {
+   const region = core.getInput('region')
+   return region || null
+ }
+
 const getRepository = () => {
   const repository = core.getInput('repository')
   return repository
 }
+
+const getType = () => {
+   const type = core.getInput('type')
+   return type || 'express'
+ }
 
 const getVersion = () => {
   const version = core.getInput('version')
@@ -208,8 +257,11 @@ async function run() {
       const appName = getAppName()
       const clusterSecrets = getClusterSecrets();
       const namespace = getNamespace()
+      const region = getRegion()
       const repository = getRepository()
+      const type = getType()
       const version = getVersion()
+      const apm = getApm()
 
       core.debug(`param: appName = "${appName}"`);
       core.debug(`param: namespace = "${namespace}"`);
@@ -226,10 +278,10 @@ async function run() {
 
       await exec.exec('kubectl', args);
 
-      const deployment = getDeployment(appName, namespace, repository, version, clusterSecrets);
+      const deployment = getDeployment(type, appName, namespace, repository, version, clusterSecrets, apm);
       await writeFile("./deployment.yml", deployment);
 
-      const service = getService(appName, namespace);
+      const service = getService(type, appName, namespace, region);
       await writeFile("./service.yml", service);
 
       const deployArgs = [ 'apply', '-f', 'deployment.yml' ]
