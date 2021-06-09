@@ -162,7 +162,7 @@ const getService = ({ type, name, namespace, region }) => {
        "name": name,
        "namespace": namespace,
        "annotations": {
-        "cloud.google.com/neg": `{ \"exposed_ports\": { \"3000\": { \"name\": \"${region}-${name}\" } } }`
+        "cloud.google.com/neg": `{ \"exposed_ports\": { \"3000\": { \"name\": \"${name}-${namespace}\" } } }`
        }
     },
     "spec": {
