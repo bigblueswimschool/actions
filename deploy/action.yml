@@ -5,7 +5,7 @@ icon: box
 color: blue-dark
 inputs:
   apm:
-    description: Enable APM (default: true)
+    description: Enable APM (default true)
   clusterSecrets:
     description: clusterSecrets
   name:
