@@ -43,7 +43,7 @@ const getDeployment = ({ type, name, namespace, repository, version, clusterSecr
   }
 
 
-  const googleIndex = secrets.findIndex(o === 'google')
+  const googleIndex = secrets.findIndex(o => o === 'google')
 
   if (googleIndex >= 0) {
     volumeMounts.push({
