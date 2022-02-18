@@ -129,7 +129,8 @@ async function run() {
       // Get Kube Credentials
       await getKubeCredentials()
 
-      const configFiles = await generateFiles(namespace);
+      console.log(process.env);
+      const configFiles = await generateFiles(namespace, values);
       console.log(configFiles);
 
       // await generateRabbitMQ(namespace, values)
