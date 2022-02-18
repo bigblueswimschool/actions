@@ -8,7 +8,7 @@ const Handlebars = require('handlebars');
 const writeFile = util.promisify(fs.writeFile);
 const YAML = require('json-to-pretty-yaml');
 
-const getDeployment = (config) => {
+const getDeployment = async (config) => {
   const { type, name, namespace, repository, version, secrets, readinessPath, apm } = config;
   const cpu = '50m';
   const memory = '256mi';
@@ -273,8 +273,8 @@ async function run() {
 
       await exec.exec('kubectl', args);
 
-      // const deployment = getDeployment(inputConfig);
-      // await writeFile("./deployment.yml", deployment);
+      const deployment = await getDeployment(inputConfig);
+      await writeFile("./deployment.yml", deployment);
 
       const service = await getService(inputConfig);
       await writeFile("./service.yml", service);
