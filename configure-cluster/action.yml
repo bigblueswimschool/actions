@@ -6,6 +6,8 @@ color: blue-dark
 inputs:
   namespace:
     description: Namespace
+  secrets:
+    description: Secrets (JSON String)
   values:
     description: Helm chart values (JSON String)
 runs:
