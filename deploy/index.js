@@ -7,11 +7,21 @@ const writeFile = util.promisify(fs.writeFile);
 const YAML = require('json-to-pretty-yaml');
 
 const getDeployment = (config) => {
-  const { type, name, namespace, repository, version, clusterSecrets, readinessPath, apm } = config;
+  const { type, name, namespace, repository, version, secrets, readinessPath, apm } = config;
+
+  // // Build configMaps
+  // const envConfigs = configs.split(',').map(o => o.trim())
+  // const envFrom = envConfigs.map(o => {
+  //   return {
+  //     "configMapRef": {
+  //       "name": o
+  //     }
+  //   }
+  // })
 
   // Build envrionment secrets
-  const secrets = clusterSecrets.split(',').map(o => o.trim())
-  const envFrom = secrets.map(o => {
+  const envSecrets = secrets.split(',').map(o => o.trim())
+  const envFrom = envSecrets.map(o => {
     return {
       "secretRef": {
         "name": o
@@ -192,7 +202,7 @@ const getInputConfig = () => {
   const appNameInput = core.getInput('appName')
   const appName = appNameInput || repository.split('/')[1]
   const apm = core.getInput('apm')
-  const clusterSecrets = core.getInput('clusterSecrets')
+  const secrets = core.getInput('secrets')
   const namespace = core.getInput('namespace')
   const readinessPath = core.getInput('readinessPath')
   const region = core.getInput('region')
@@ -202,7 +212,7 @@ const getInputConfig = () => {
 
   return {
     apm: apm || true,
-    clusterSecrets: clusterSecrets || '',
+    secrets: secrets || '',
     name: appName,
     namespace: namespace || 'default',
     readinessPath: readinessPath || '/info',

@@ -6,8 +6,10 @@ color: blue-dark
 inputs:
   apm:
     description: Enable APM (default true)
-  clusterSecrets:
-    description: clusterSecrets
+  configs:
+    description: ConfigMaps
+  secrets:
+    description: Secrets
   name:
     description: Name of the service
   region:
