@@ -178,28 +178,7 @@ const getService = async (config) => {
   const templateContents = await readFile('/usr/app/templates/service.yml.hbs');
   const template = Handlebars.compile(templateContents.toString(), { noEscape: true });
   const output = template({ name, namespace });
-  console.log(output);
-
-  const service = {
-    "apiVersion": "v1",
-    "kind": "Service",
-    "metadata": {
-       "name": name,
-       "namespace": namespace,
-       "annotations": {
-        "cloud.google.com/neg": `{ \"exposed_ports\": { \"3000\": { \"name\": \"${name}-${namespace}\" } } }`
-       }
-    },
-    "spec": {
-       "ports": ports,
-       "selector": {
-          "app": name
-       },
-       "type": "NodePort"
-    }
-  }
-  yaml = YAML.stringify(service)
-  return yaml
+  return output;
 }
 /**
  * Input fetchers
@@ -283,13 +262,13 @@ async function run() {
       // await writeFile("./deployment.yml", deployment);
 
       const service = getService(inputConfig);
-      // await writeFile("./service.yml", service);
+      await writeFile("./service.yml", service);
 
       // const deployArgs = [ 'apply', '-f', 'deployment.yml' ]
       // await exec.exec('kubectl', deployArgs);
 
-      // const serviceArgs = [ 'apply', '-f', 'service.yml' ]
-      // await exec.exec('kubectl', serviceArgs);
+      const serviceArgs = [ 'apply', '-f', 'service.yml' ]
+      await exec.exec('kubectl', serviceArgs);
 
     } catch (error) {
       core.error(error);
