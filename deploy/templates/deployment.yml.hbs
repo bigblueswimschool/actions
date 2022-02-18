@@ -67,12 +67,11 @@ spec:
       schedulerName: default-scheduler
       securityContext: {}
       terminationGracePeriodSeconds: 30
+      {{#greaterThan volumes.length 0}}
       volumes:
-        {{#if apm }}
-        - name: elastic-apm-node
+        {{#each envSecrets}}
+        - name: {{ this.name }}
           secret:
-            secretName: elastic-apm-node
-        {{/if}}
-        - name: google-cloud
-          secret:
-            secretName: google-cloud
+            secretName: {{ this.secret.secretName }}
+        {{/each}}
+      {{/greaterThan}}

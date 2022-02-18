@@ -8,6 +8,14 @@ const Handlebars = require('handlebars');
 const writeFile = util.promisify(fs.writeFile);
 const YAML = require('json-to-pretty-yaml');
 
+Handlebars.registerHelper('greaterThan', (left, right, options) => {
+  'use strict';
+   if (left>right) {
+     return options.fn(this);
+  }
+  return options.inverse(this);
+})
+
 const getDeployment = async (config) => {
   const { type, name, namespace, repository, version, secrets, readinessPath, apm } = config;
   const cpu = '50m';
@@ -21,37 +29,6 @@ const getDeployment = async (config) => {
   if (type === 'nestjs') {
      containerPorts.push({ containerPort: 3001 })
   }
-
-  const templateContents = await readFile('/usr/app/templates/deployment.yml.hbs');
-  const template = Handlebars.compile(templateContents.toString(), { noEscape: true });
-  const output = template({ envSecrets, ...config, containerPorts, cpu, memory, port, replicas });
-  console.log(output);
-
-  // // Build configMaps
-  // const envConfigs = configs.split(',').map(o => o.trim())
-  // const envFrom = envConfigs.map(o => {
-  //   return {
-  //     "configMapRef": {
-  //       "name": o
-  //     }
-  //   }
-  // })
-
-  // Build envrionment secrets
-  // const envSecrets = secrets.split(',').map(o => o.trim())
-  const envFrom = envSecrets.map(o => {
-    return {
-      "secretRef": {
-        "name": o
-      }
-    }
-  })
-
-  // Container Ports
-  // const containerPorts = [{ containerPort: 3000 }]
-  // if (type === 'nestjs') {
-  //    containerPorts.push({ containerPort: 3001 })
-  // }
 
   // Volumes
   const volumeMounts = []
@@ -76,7 +53,7 @@ const getDeployment = async (config) => {
 
 
   // Load google cloud
-  const googleIndex = secrets.findIndex(o => o === 'google')
+  const googleIndex = envSecrets.findIndex(o => o === 'google')
 
   if (googleIndex >= 0) {
     volumeMounts.push({
@@ -94,80 +71,12 @@ const getDeployment = async (config) => {
     })
   }
 
-  // Deployment json
-  const deployment = {
-    "apiVersion": "apps/v1",
-    "kind": "Deployment",
-    "metadata": {
-       "labels": {
-          "app": name
-       },
-       "name": name,
-       "namespace": namespace
-    },
-    "spec": {
-       "replicas": 1,
-       "revisionHistoryLimit": 10,
-       "selector": {
-          "matchLabels": {
-             "app": name
-          }
-       },
-       "strategy": {
-          "rollingUpdate": {
-             "maxSurge": 2,
-             "maxUnavailable": 0
-          },
-          "type": "RollingUpdate"
-       },
-       "minReadySeconds": 5,
-       "template": {
-          "metadata": {
-             "labels": {
-                "app": name
-             }
-          },
-          "spec": {
-             "containers": [
-                {
-                   "image": `${repository}/${name}:${version}`,
-                   "imagePullPolicy": "IfNotPresent",
-                   "tty": true,
-                   "stdin": true,
-                   "name": name,
-                   "ports": containerPorts,
-                   "readinessProbe": {
-                      "httpGet": {
-                         "path": readinessPath,
-                         "port": 3000
-                      },
-                      initialDelaySeconds: 5,
-                      periodSeconds: 5,
-                      successThreshold: 1
-                   },
-                   "envFrom": envFrom,
-                   "resources": {
-                      "requests": {
-                         "cpu": "50m",
-                         "memory": "256Mi"
-                      }
-                   },
-                   "volumeMounts": volumeMounts
-                }
-             ],
-             "dnsPolicy": "ClusterFirst",
-             "restartPolicy": "Always",
-             "schedulerName": "default-scheduler",
-             "securityContext": {},
-             "terminationGracePeriodSeconds": 30,
-             "volumes": volumes
-          }
-       }
-    }
-  }
+  const templateContents = await readFile('/usr/app/templates/deployment.yml.hbs');
+  const template = Handlebars.compile(templateContents.toString(), { noEscape: true });
+  const output = template({ ...config, envSecrets, containerPorts, cpu, memory, port, replicas, volumeMounts, volumes });
+  console.log(output);
 
-  yaml = YAML.stringify(deployment)
-  return yaml
+  return output;
 }
 
 const getService = async (config) => {
