@@ -24,9 +24,14 @@ const getNamespace = () => {
   return namespace
 }
 
+const getSecrets = () => {
+  const secrets = core.getInput('secrets')
+  return JSON.parse(secrets)
+}
+
 const getValues = () => {
   const values = core.getInput('values')
-   return JSON.parse(values)
+  return JSON.parse(values)
 }
 
 const getAllFiles = async (pattern, options = null) => {
@@ -90,6 +95,8 @@ async function run() {
     try {
       // const context = github.context;
       const namespace = getNamespace();
+      const secrets = getSecrets();
+      console.log('secrets', secrets);
       const values = getValues();
 
       // Authenticate Google Cloud
@@ -103,8 +110,8 @@ async function run() {
       for (let i = 0; i < configFiles.length; i++) {
         const configPath = configFiles[i];
         console.log(`Applying ./${configPath}`)
-        // const secretsArgs = [ 'apply', '-f', `./${configPath}` ]
-        // await exec.exec('kubectl', secretsArgs)
+        const secretsArgs = [ 'apply', '-f', `./${configPath}` ]
+        await exec.exec('kubectl', secretsArgs)
       }
     } catch (error) {
       core.error(error);
