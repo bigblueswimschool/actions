@@ -53,6 +53,7 @@ spec:
             requests:
               cpu: {{ cpu }}
               memory: {{ memory }}
+              ephemeral-storage: {{ storage }}
           {{#if volumeMounts.[0]}}
           volumeMounts:
             {{#each volumeMounts}}

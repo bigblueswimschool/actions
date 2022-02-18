@@ -111,6 +111,7 @@ const getInputConfig = () => {
   const secrets = core.getInput('secrets')
   const namespace = core.getInput('namespace')
   const memory = core.getInput('memory')
+  const storage = core.getInput('storage')
   const readinessPath = core.getInput('readinessPath')
   const replicas = core.getInput('replicas')
   const region = core.getInput('region')
@@ -121,11 +122,12 @@ const getInputConfig = () => {
   return {
     apm: apm || true,
     configs: configs || '',
-    cpu: cpu || '50m',
+    cpu: cpu || '250m',
     secrets: secrets || '',
     name: appName,
     namespace: namespace || 'default',
-    memory: memory || '256Mi',
+    memory: memory || '512Mi',
+    storage: storage || '10Mi',
     readinessPath: readinessPath || '/info',
     region: region || null,
     replicas: replicas || 1,

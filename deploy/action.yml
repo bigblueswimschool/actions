@@ -27,9 +27,11 @@ inputs:
   readinessPath:
     description: Path to determine when service is active
   cpu:
-    description: Requested CPU
+    description: Requested CPU (default/min 250m)
   memory:
-    description: Requested Memory
+    description: Requested Memory (default/min 512Mi)
+  storage:
+    description: Requested Storage (default/min 10Mi)
 runs:
   using: docker
   image: Dockerfile
