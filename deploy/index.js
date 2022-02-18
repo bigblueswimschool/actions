@@ -48,10 +48,10 @@ const getDeployment = async (config) => {
   })
 
   // Container Ports
-  const containerPorts = [{ containerPort: 3000 }]
-  if (type === 'nestjs') {
-     containerPorts.push({ containerPort: 3001 })
-  }
+  // const containerPorts = [{ containerPort: 3000 }]
+  // if (type === 'nestjs') {
+  //    containerPorts.push({ containerPort: 3001 })
+  // }
 
   // Volumes
   const volumeMounts = []
