@@ -272,17 +272,17 @@ async function run() {
 
       await exec.exec('kubectl', args);
 
-      const deployment = getDeployment(inputConfig);
-      await writeFile("./deployment.yml", deployment);
+      // const deployment = getDeployment(inputConfig);
+      // await writeFile("./deployment.yml", deployment);
 
-      const service = getService({ type, name: appName, namespace, region });
-      await writeFile("./service.yml", service);
+      // const service = getService({ type, name: appName, namespace, region });
+      // await writeFile("./service.yml", service);
 
-      const deployArgs = [ 'apply', '-f', 'deployment.yml' ]
-      await exec.exec('kubectl', deployArgs);
+      // const deployArgs = [ 'apply', '-f', 'deployment.yml' ]
+      // await exec.exec('kubectl', deployArgs);
 
-      const serviceArgs = [ 'apply', '-f', 'service.yml' ]
-      await exec.exec('kubectl', serviceArgs);
+      // const serviceArgs = [ 'apply', '-f', 'service.yml' ]
+      // await exec.exec('kubectl', serviceArgs);
 
     } catch (error) {
       core.error(error);
