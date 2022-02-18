@@ -29,26 +29,31 @@ const getValues = () => {
    return JSON.parse(values)
 }
 
-const generateFiles = async (namespace, values) => {
-  const configs = new Set();
-
-  return new Promise(async (resolve, reject) => {
-    glob('**/*.hbs', null, function (err, files) {
+const getAllFiles = async (pattern, options = null) => {
+  return new Promise((resolve, reject) => {
+    glob(pattern, options, function (err, files) {
       if (err) reject(err);
-      
-      for (file in files) {
-        const templateContents = await readFile(file);
-        const template = Handlebars.compile(templateContents.toString(), { noEscape: true });
-        const output = template({ namespace, ...values });
-        const newFile = file.substr(0, file.length - 4);
-        console.log(`Writing ${newFile}`);
-        await writeFile(`${newFile}`, output);
-        const pathParts = file.split('/');
-        pathParts.length > 1 ? configs.add(`${pathParts[0]}/`) : configs.add(file);
-      }
-      resolve(Array.from(configs));
+      resolve(files);
     })
   })
+}
+
+const generateFiles = async (namespace, values) => {
+  const configs = new Set();
+  const files = await getAllFiles('**/*.hbs');
+
+  for (file in files) {
+    const templateContents = await readFile(file);
+    const template = Handlebars.compile(templateContents.toString(), { noEscape: true });
+    const output = template({ namespace, ...values });
+    const newFile = file.substr(0, file.length - 4);
+    console.log(`Writing ${newFile}`);
+    await writeFile(`${newFile}`, output);
+    const pathParts = file.split('/');
+    pathParts.length > 1 ? configs.add(`${pathParts[0]}/`) : configs.add(file);
+  }
+
+  return configs;
 }
 
 const generateRabbitMQ = async (namespace, values) => {
