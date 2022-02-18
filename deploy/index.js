@@ -1,20 +1,10 @@
 const core = require("@actions/core");
-const github = require("@actions/github");
 const exec = require("@actions/exec");
 const fs = require("fs");
 const util = require("util");
 const readFile = util.promisify(fs.readFile);
 const Handlebars = require('handlebars');
 const writeFile = util.promisify(fs.writeFile);
-const YAML = require('json-to-pretty-yaml');
-
-Handlebars.registerHelper('greaterThan', (left, right, options) => {
-  'use strict';
-   if (left>right) {
-     return options.fn(this);
-  }
-  return options.inverse(this);
-})
 
 const getDeployment = async (config) => {
   const { configs, type, secrets, apm } = config;
@@ -119,6 +109,7 @@ const getInputConfig = () => {
   const appNameInput = core.getInput('appName')
   const appName = appNameInput || githubRepository.split('/')[1]
   const apm = core.getInput('apm')
+  const configs = core.getInput('configs')
   const secrets = core.getInput('secrets')
   const namespace = core.getInput('namespace')
   const readinessPath = core.getInput('readinessPath')
@@ -129,6 +120,7 @@ const getInputConfig = () => {
 
   return {
     apm: apm || true,
+    configs: configs || '',
     secrets: secrets || '',
     name: appName,
     namespace: namespace || 'default',
