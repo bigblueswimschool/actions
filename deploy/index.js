@@ -18,7 +18,7 @@ const getDeployment = async (config) => {
   const envConfig = configs.split(',').map(o => o.trim())
   const envSecrets = secrets.split(',').map(o => o.trim())
 
-  envConfig.forEach((name) => envFrom.push({ type: 'configMap', name }))
+  envConfig.forEach((name) => envFrom.push({ type: 'configMapRef', name }))
   envSecrets.forEach((name) => envFrom.push({ type: 'secretRef', name }))
 
   // Container Ports
