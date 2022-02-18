@@ -42,11 +42,13 @@ spec:
             successThreshold: 1
             timeoutSeconds: 5
           {{/if}}
+          {{#if envFrom.[0]}}
           envFrom:
-            {{#each envSecrets}}
-            - secretRef:
-                name: {{ this }}
+            {{#each envFrom}}
+            - {{ this.type }}:
+                name: {{ this.name }}
             {{/each}}
+          {{/if}}
           resources:
             requests:
               cpu: {{ cpu }}

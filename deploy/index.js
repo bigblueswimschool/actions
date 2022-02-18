@@ -17,12 +17,19 @@ Handlebars.registerHelper('greaterThan', (left, right, options) => {
 })
 
 const getDeployment = async (config) => {
-  const { type, name, namespace, repository, version, secrets, readinessPath, apm } = config;
+  const { configs, type, secrets, apm } = config;
   const cpu = '50m';
-  const memory = '256mi';
+  const memory = '256Mi';
   const port = 3000;
   const replicas = 1;
+
+  // Env
+  const envFrom = [];
+  const envConfig = configs.split(',').map(o => o.trim())
   const envSecrets = secrets.split(',').map(o => o.trim())
+
+  envConfig.forEach((name) => envFrom.push({ type: 'configMap', name }))
+  envSecrets.forEach((name) => envFrom.push({ type: 'secretRef', name }))
 
   // Container Ports
   const containerPorts = [{ containerPort: 3000 }]
@@ -51,7 +58,6 @@ const getDeployment = async (config) => {
     })
   }
 
-
   // Load google cloud
   const googleIndex = envSecrets.findIndex(o => o === 'google')
 
@@ -71,11 +77,9 @@ const getDeployment = async (config) => {
     })
   }
 
-  console.log(volumes);
-
   const templateContents = await readFile('/usr/app/templates/deployment.yml.hbs');
   const template = Handlebars.compile(templateContents.toString(), { noEscape: true });
-  const output = template({ ...config, envSecrets, containerPorts, cpu, memory, port, replicas, volumeMounts, volumes });
+  const output = template({ ...config, envFrom, containerPorts, cpu, memory, port, replicas, volumeMounts, volumes });
   console.log(output);
 
   return output;
