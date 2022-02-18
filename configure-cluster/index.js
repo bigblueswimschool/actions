@@ -25,8 +25,6 @@ const getNamespace = () => {
 }
 
 const getValues = () => {
-  const config = core.getInput('config')
-  console.log(config) 
   const values = core.getInput('values')
    return JSON.parse(values)
 }
