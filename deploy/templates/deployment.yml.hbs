@@ -51,7 +51,7 @@ spec:
             requests:
               cpu: {{ cpu }}
               memory: {{ memory }}
-          {{#greaterThan volumeMounts.length 0}}
+          {{#if volumeMounts.[0]}}
           volumeMounts:
             {{#each volumeMounts}}
             - name: {{ this.name }}
@@ -59,17 +59,17 @@ spec:
               subPath: {{ this.subPath }}
               readOnly: {{ this.readOnly }}
             {{/each}}
-          {{/greaterThan}}
+          {{/if}}
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext: {}
       terminationGracePeriodSeconds: 30
-      {{#greaterThan volumes.length 0}}
+      {{#if volumes.[0]}}
       volumes:
         {{#each volumes}}
         - name: {{ this.name }}
           secret:
             secretName: {{ this.secret.secretName }}
         {{/each}}
-      {{/greaterThan}}
+      {{/if}}
