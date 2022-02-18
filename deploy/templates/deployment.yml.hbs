@@ -51,17 +51,15 @@ spec:
             requests:
               cpu: {{ cpu }}
               memory: {{ memory }}
+          {{#greaterThan volumeMounts.length 0}}
           volumeMounts:
-            {{#if apm }}
-            - name: elastic-apm-node
-              mountPath: "/usr/config/elastic-apm-node.js"
-              subPath: elastic-apm-node.js
-              readOnly: true
-            {{/if}}
-            - name: google-cloud
-              mountPath: "/usr/config/google.json"
-              subPath: googleCloud.json
-              readOnly: true
+            {{#each volumeMounts}}
+            - name: {{ this.name }}
+              mountPath: {{ this.mountPath }}
+              subPath: {{ this.subPath }}
+              readOnly: {{ this.readOnly }}
+            {{/each}}
+          {{/greaterThan}}
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
@@ -69,7 +67,7 @@ spec:
       terminationGracePeriodSeconds: 30
       {{#greaterThan volumes.length 0}}
       volumes:
-        {{#each envSecrets}}
+        {{#each volumes}}
         - name: {{ this.name }}
           secret:
             secretName: {{ this.secret.secretName }}
