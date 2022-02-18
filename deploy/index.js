@@ -3,6 +3,7 @@ const github = require("@actions/github");
 const exec = require("@actions/exec");
 const fs = require("fs");
 const util = require("util");
+const Handlebars = require('handlebars');
 const writeFile = util.promisify(fs.writeFile);
 const YAML = require('json-to-pretty-yaml');
 
@@ -152,7 +153,7 @@ const getDeployment = (config) => {
   return yaml
 }
 
-const getService = (config) => {
+const getService = async (config) => {
   const { type, name, namespace } = config;
 
   const ports = [
@@ -172,6 +173,11 @@ const getService = (config) => {
        targetPort: 3001
      })
   }
+
+  const templateContents = await readFile('/usr/app/templates/service.yml.hbs');
+  const template = Handlebars.compile(templateContents.toString(), { noEscape: true });
+  const output = template({ name, namespace });
+  console.log(output);
 
   const service = {
     "apiVersion": "v1",
