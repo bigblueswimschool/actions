@@ -6,10 +6,10 @@ color: blue-dark
 inputs:
   namespace:
     description: Namespace
+  values:
+    description: Clear Text Values (JSON String)
   secrets:
     description: Secrets (JSON String)
-  values:
-    description: Helm chart values (JSON String)
 runs:
   using: docker
   image: Dockerfile

@@ -43,7 +43,7 @@ const getAllFiles = async (pattern, options = null) => {
   })
 }
 
-const generateFiles = async (namespace, values) => {
+const generateFiles = async (namespace, values, secrets) => {
   const configs = new Set();
   const files = await getAllFiles('**/*.hbs');
 
@@ -51,7 +51,7 @@ const generateFiles = async (namespace, values) => {
     const file = files[i]
     const templateContents = await readFile(file);
     const template = Handlebars.compile(templateContents.toString(), { noEscape: true });
-    const output = template({ namespace, ...values });
+    const output = template({ namespace, ...values, ...secrets });
     const newFile = file.substr(0, file.length - 4);
     console.log(`Writing ${newFile}`);
     await writeFile(`${newFile}`, output);
@@ -96,7 +96,6 @@ async function run() {
       // const context = github.context;
       const namespace = getNamespace();
       const secrets = getSecrets();
-      console.log('secrets', secrets);
       const values = getValues();
 
       // Authenticate Google Cloud
@@ -105,7 +104,7 @@ async function run() {
       // Get Kube Credentials
       await getKubeCredentials()
 
-      const configFiles = await generateFiles(namespace, values);
+      const configFiles = await generateFiles(namespace, values, secrets);
 
       for (let i = 0; i < configFiles.length; i++) {
         const configPath = configFiles[i];
