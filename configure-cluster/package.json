@@ -21,9 +21,9 @@
     "@actions/exec": "^1.0.4",
     "@actions/github": "^2.2.0",
     "fs": "0.0.1-security",
+    "glob": "^7.2.0",
     "handlebars": "^4.7.7",
     "json-to-pretty-yaml": "^1.2.2",
-    "node-glob": "^1.2.0",
     "nodejs-base64": "^2.0.0",
     "util": "^0.12.3"
   }
