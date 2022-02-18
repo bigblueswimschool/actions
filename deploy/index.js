@@ -10,6 +10,21 @@ const YAML = require('json-to-pretty-yaml');
 
 const getDeployment = (config) => {
   const { type, name, namespace, repository, version, secrets, readinessPath, apm } = config;
+  const cpu = '50m';
+  const memory = '256mi';
+  const port = 3000;
+  const envSecrets = secrets.split(',').map(o => o.trim())
+
+  // Container Ports
+  const containerPorts = [{ containerPort: 3000 }]
+  if (type === 'nestjs') {
+     containerPorts.push({ containerPort: 3001 })
+  }
+
+  const templateContents = await readFile('/usr/app/templates/deployment.yml.hbs');
+  const template = Handlebars.compile(templateContents.toString(), { noEscape: true });
+  const output = template({ envSecrets, ...config, containerPorts, cpu, memory, port });
+  console.log(output);
 
   // // Build configMaps
   // const envConfigs = configs.split(',').map(o => o.trim())

@@ -2,15 +2,15 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: {{ .Values.name }}
-  name: {{ .Values.name }}
+    app: {{ name }}
+  name: {{ name }}
   namespace: default
 spec:
   replicas: {{ .Values.replicas }}
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      app: {{ .Values.name }}
+      app: {{ name }}
   strategy:
     rollingUpdate:
       maxSurge: 2
@@ -20,52 +20,44 @@ spec:
   template:
     metadata:
       labels:
-        app: {{ .Values.name }}
+        app: {{ name }}
     spec:
       containers:
-        - image: {{ .Values.repository }}/{{ .Values.name }}:{{ .Values.version }}
+        - image: {{ repository }}/{{ name }}:{{ version }}
           imagePullPolicy: IfNotPresent
           tty: true
           stdin: true
-          name: {{ .Values.name }}
+          name: {{ name }}
           ports:
-            - containerPort: {{ .Values.port | default 3000 }}
-            - containerPort: 3001
-          {{- if (.Values.readinessPath) }}
+          {{#each containerPorts}}
+            - containerPort: {{ this.containerPort }}
+          {{/each}}
+          {{if readinessPath }}
           readinessProbe:
             httpGet:
-              path: {{ .Values.readinessPath }}
-              port: {{ .Values.port | default 3000 }}
+              path: {{ readinessPath }}
+              port: {{ port }}
             initialDelaySeconds: 5
             periodSeconds: 5
             successThreshold: 1
             timeoutSeconds: 5
-          {{- end }}
+          {{/if}}
           envFrom:
-            {{- range .Values.secrets }}
+            {{#each envSecrets}}
             - secretRef:
-                name: {{ .name }}
-            {{- end}}
-            - configMapRef:
-                name: {{ .Values.name }}-env
-                optional: true
-          {{- if (.Values.resources) }}
+                name: {{ this }}
+            {{/each}}
           resources:
             requests:
-              {{- if (.Values.resources.requests.cpu) }}
-              cpu: {{ .Values.resources.requests.cpu }}
-              {{- end }}
-              {{- if (.Values.resources.requests.memory) }}
-              memory: {{ .Values.resources.requests.memory }}
-              {{- end }}
-          {{- end }}
+              cpu: {{ cpu }}
+              memory: {{ memory }}
           volumeMounts:
-            {{- if (.Values.apm) }}
+            {{#if apm }}
             - name: elastic-apm-node
               mountPath: "/usr/config/elastic-apm-node.js"
               subPath: elastic-apm-node.js
               readOnly: true
-            {{- end }}
+            {{/if}}
             - name: google-cloud
               mountPath: "/usr/config/google.json"
               subPath: googleCloud.json
@@ -76,11 +68,11 @@ spec:
       securityContext: {}
       terminationGracePeriodSeconds: 30
       volumes:
-        {{- if (.Values.apm) }}
+        {{#if apm }}
         - name: elastic-apm-node
           secret:
             secretName: elastic-apm-node
-        {{- end }}
+        {{/if}}
         - name: google-cloud
           secret:
             secretName: google-cloud
