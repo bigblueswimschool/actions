@@ -261,7 +261,7 @@ const getKubeCredentials = () => {
 async function run() {
     try {
       const inputConfig = getInputConfig();
-      const { name, namespace, repository, version } = inputConfig;
+      const { name, namespace, repository, type, version } = inputConfig;
 
       core.debug(`param: appName = "${name}"`);
       core.debug(`param: namespace = "${namespace}"`);
@@ -281,7 +281,7 @@ async function run() {
       // const deployment = getDeployment(inputConfig);
       // await writeFile("./deployment.yml", deployment);
 
-      const service = getService({ type, name: appName, namespace, region });
+      const service = getService({ type, name, namespace });
       // await writeFile("./service.yml", service);
 
       // const deployArgs = [ 'apply', '-f', 'deployment.yml' ]
