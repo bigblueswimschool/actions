@@ -262,7 +262,6 @@ async function run() {
       // await writeFile("./deployment.yml", deployment);
 
       const service = await getService(inputConfig);
-      console.log(service);
       await writeFile("./service.yml", service);
 
       // const deployArgs = [ 'apply', '-f', 'deployment.yml' ]
