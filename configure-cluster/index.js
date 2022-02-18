@@ -29,9 +29,25 @@ const getValues = () => {
    return JSON.parse(values)
 }
 
-const generateFiles = async (namespace) => {
-  glob('**/*.hbs', null, function (err, files) {
-    console.log(files);
+const generateFiles = async (namespace, values) => {
+  const configs = new Set();
+
+  return new Promise((resolve, reject) => {
+    glob('**/*.hbs', null, function (err, files) {
+      if (err) reject(err);
+      
+      for (file in files) {
+        const templateContents = await readFile(file);
+        const template = Handlebars.compile(templateContents.toString(), { noEscape: true });
+        const output = template({ namespace, ...values });
+        const newFile = file.substr(0, file.length - 4);
+        console.log(`Writing ${newFile}`);
+        await writeFile(`${newFile}`, output);
+        const pathParts = file.split('/');
+        pathParts.length > 1 ? configs.add(`${pathParts[0]}/`) : configs.add(file);
+      }
+      resolve(Array.from(configs));
+    })
   })
 }
 
@@ -106,8 +122,9 @@ async function run() {
       // Get Kube Credentials
       await getKubeCredentials()
 
-      await generateFiles(namespace);
-
+      const configFiles = await generateFiles(namespace);
+      console.log(configFiles);
+      
       // await generateRabbitMQ(namespace, values)
       // await generateSecrets(namespace, values)
 
