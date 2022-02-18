@@ -198,9 +198,9 @@ const getService = (config) => {
  * Input fetchers
  */
 const getInputConfig = () => {
-  const repository = process.env.GITHUB_REPOSITORY
+  const githubRepository = process.env.GITHUB_REPOSITORY
   const appNameInput = core.getInput('appName')
-  const appName = appNameInput || repository.split('/')[1]
+  const appName = appNameInput || githubRepository.split('/')[1]
   const apm = core.getInput('apm')
   const secrets = core.getInput('secrets')
   const namespace = core.getInput('namespace')
