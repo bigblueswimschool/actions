@@ -6,9 +6,11 @@ const util = require("util");
 const writeFile = util.promisify(fs.writeFile);
 const YAML = require('json-to-pretty-yaml');
 
-const getDeployment = ({ type, name, namespace, repository, version, clusterSecrets, readinessPath, apm }) => {
-  const secrets = clusterSecrets.split(',').map(o => o.trim())
+const getDeployment = (config) => {
+  const { type, name, namespace, repository, version, clusterSecrets, readinessPath, apm } = config;
 
+  // Build envrionment secrets
+  const secrets = clusterSecrets.split(',').map(o => o.trim())
   const envFrom = secrets.map(o => {
     return {
       "secretRef": {
@@ -17,15 +19,17 @@ const getDeployment = ({ type, name, namespace, repository, version, clusterSecr
     }
   })
 
+  // Container Ports
   const containerPorts = [{ containerPort: 3000 }]
-
   if (type === 'nestjs') {
      containerPorts.push({ containerPort: 3001 })
   }
 
+  // Volumes
   const volumeMounts = []
   const volumes = []
 
+  // Load apm
   if (apm) {
     volumeMounts.push({
       "name": "elastic-apm-node",
@@ -43,6 +47,7 @@ const getDeployment = ({ type, name, namespace, repository, version, clusterSecr
   }
 
 
+  // Load google cloud
   const googleIndex = secrets.findIndex(o => o === 'google')
 
   if (googleIndex >= 0) {
@@ -61,6 +66,7 @@ const getDeployment = ({ type, name, namespace, repository, version, clusterSecr
     })
   }
 
+  // Deployment json
   const deployment = {
     "apiVersion": "apps/v1",
     "kind": "Deployment",
@@ -136,7 +142,9 @@ const getDeployment = ({ type, name, namespace, repository, version, clusterSecr
   return yaml
 }
 
-const getService = ({ type, name, namespace, region }) => {
+const getService = (config) => {
+  const { type, name, namespace } = config;
+
   const ports = [
     {
       name: 'http',
@@ -179,53 +187,31 @@ const getService = ({ type, name, namespace, region }) => {
 /**
  * Input fetchers
  */
-const getAppName = () => {
+const getInputConfig = () => {
   const repository = process.env.GITHUB_REPOSITORY
   const appNameInput = core.getInput('appName')
   const appName = appNameInput || repository.split('/')[1]
-
-  return appName
-}
-
-const getApm = () => {
-   const apm = core.getInput('apm')
-   return apm || true
-}
-
-const getNamespace = () => {
-  const namespace = core.getInput('namespace')
-  return namespace || 'default'
-}
-
-const getRegion = () => {
-   const region = core.getInput('region')
-   return region || null
- }
-
-const getRepository = () => {
-  const repository = core.getInput('repository')
-  return repository
-}
-
-const getType = () => {
-   const type = core.getInput('type')
-   return type || 'express'
- }
-
-const getVersion = () => {
-  const version = core.getInput('version')
-  return version
-}
-
-const getClusterSecrets = () => {
+  const apm = core.getInput('apm')
   const clusterSecrets = core.getInput('clusterSecrets')
-  return clusterSecrets
-}
+  const namespace = core.getInput('namespace')
+  const readinessPath = core.getInput('readinessPath')
+  const region = core.getInput('region')
+  const repository = core.getInput('repository')
+  const type = core.getInput('type')
+  const version = core.getInput('version')
 
-const getReadinessPath = () => {
-   const readinessPath = core.getInput('readinessPath')
-   return readinessPath
- }
+  return {
+    apm: apm || true,
+    clusterSecrets: clusterSecrets || '',
+    name: appName,
+    namespace: namespace || 'default',
+    readinessPath: readinessPath || '/info',
+    region: region || null,
+    repository,
+    type: type || 'express',
+    version
+  }
+}
 
 /**
  * authGCloud() activates the service account using the ENV var
@@ -258,18 +244,10 @@ const getKubeCredentials = () => {
  */
 async function run() {
     try {
-      // const context = github.context;
-      const appName = getAppName()
-      const clusterSecrets = getClusterSecrets();
-      const namespace = getNamespace()
-      const region = getRegion()
-      const repository = getRepository()
-      const type = getType()
-      const version = getVersion()
-      const apm = getApm()
-      const readinessPath = getReadinessPath()
+      const inputConfig = getInputConfig();
+      const { name, namespace, repository, version } = inputConfig;
 
-      core.debug(`param: appName = "${appName}"`);
+      core.debug(`param: appName = "${name}"`);
       core.debug(`param: namespace = "${namespace}"`);
       core.debug(`param: repository = "${repository}"`);
       core.debug(`param: version = "${version}"`);
@@ -284,7 +262,7 @@ async function run() {
 
       await exec.exec('kubectl', args);
 
-      const deployment = getDeployment({ type, name: appName, namespace, repository, version, clusterSecrets, readinessPath, apm });
+      const deployment = getDeployment(inputConfig);
       await writeFile("./deployment.yml", deployment);
 
       const service = getService({ type, name: appName, namespace, region });
