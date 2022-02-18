@@ -3,7 +3,6 @@ const github = require("@actions/github");
 const exec = require("@actions/exec");
 const fs = require("fs");
 const util = require("util");
-const writeFile = util.promisify(fs.writeFile);
 const readFile = util.promisify(fs.readFile);
 const Handlebars = require('handlebars');
 const writeFile = util.promisify(fs.writeFile);
