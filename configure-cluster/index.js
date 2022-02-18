@@ -32,7 +32,7 @@ const getValues = () => {
 const generateFiles = async (namespace, values) => {
   const configs = new Set();
 
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     glob('**/*.hbs', null, function (err, files) {
       if (err) reject(err);
       
@@ -124,7 +124,7 @@ async function run() {
 
       const configFiles = await generateFiles(namespace);
       console.log(configFiles);
-      
+
       // await generateRabbitMQ(namespace, values)
       // await generateSecrets(namespace, values)
 
