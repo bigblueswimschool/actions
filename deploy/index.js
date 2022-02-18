@@ -189,8 +189,8 @@ async function run() {
       const service = await getService(inputConfig);
       await writeFile("./service.yml", service);
 
-      // const deployArgs = [ 'apply', '-f', 'deployment.yml' ]
-      // await exec.exec('kubectl', deployArgs);
+      const deployArgs = [ 'apply', '-f', 'deployment.yml' ]
+      await exec.exec('kubectl', deployArgs);
 
       const serviceArgs = [ 'apply', '-f', 'service.yml' ]
       await exec.exec('kubectl', serviceArgs);
