@@ -41,7 +41,6 @@ const getAllFiles = async (pattern, options = null) => {
 const generateFiles = async (namespace, values) => {
   const configs = new Set();
   const files = await getAllFiles('**/*.hbs');
-  console.log(files);
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i]
@@ -52,40 +51,10 @@ const generateFiles = async (namespace, values) => {
     console.log(`Writing ${newFile}`);
     await writeFile(`${newFile}`, output);
     const pathParts = file.split('/');
-    pathParts.length > 1 ? configs.add(`${pathParts[0]}/`) : configs.add(file);
+    pathParts.length > 1 ? configs.add(pathParts[0]) : configs.add(file);
   }
 
-  return configs;
-}
-
-const generateRabbitMQ = async (namespace, values) => {
-   const files = await readDir('./rabbitmq')
-   const templateFiles = files.filter(o => o.substr(-3, 3) === 'hbs')
-   // Process Templates
-   for (let i = 0; i < templateFiles.length; i++) {
-      const file = templateFiles[i]
-      const templateContents = await readFile(`./rabbitmq/${file}`)
-      const template = Handlebars.compile(templateContents.toString(), { noEscape: true })
-      const output = template({ namespace, ...values })
-      const newFile = file.substr(0, file.length - 4)
-      console.log(`Writing ./rabbitmq/${newFile}...`)
-      await writeFile(`./rabbitmq/${newFile}`, output)
-   }
-}
-
-const generateSecrets = async (namespace, values) => {
-   const files = await readDir('./secrets')
-   const templateFiles = files.filter(o => o.substr(-3, 3) === 'hbs')
-   // Process Templates
-   for (let i = 0; i < templateFiles.length; i++) {
-      const file = templateFiles[i]
-      const templateContents = await readFile(`./secrets/${file}`)
-      const template = Handlebars.compile(templateContents.toString(), { noEscape: true })
-      const output = template({ namespace, ...values })
-      const newFile = file.substr(0, file.length - 4)
-      console.log(`Writing ./secrets/${newFile}...`)
-      await writeFile(`./secrets/${newFile}`, output)
-   }
+  return Array.from(configs);
 }
 
 /**
@@ -130,25 +99,13 @@ async function run() {
       await getKubeCredentials()
 
       const configFiles = await generateFiles(namespace, values);
-      console.log(configFiles);
 
-      // await generateRabbitMQ(namespace, values)
-      // await generateSecrets(namespace, values)
-
-      console.log('Applying Secrets...')
-      // const secretsArgs = [ 'apply', '-f', './secrets' ]
-      // await exec.exec('kubectl', secretsArgs)
-
-      console.log('Applying RabbitMQ...')
-      // const rabbitmqArgs = [ 'apply', '-f', './rabbitmq' ]
-      // await exec.exec('kubectl', rabbitmqArgs)
-
-      // for (let i = 0; i < configs.length; i++) {
-      //    const config = configs[i]
-      //    const args = [ 'apply', '-f', config ]
-      //    await exec.exec('kubectl', args)
-      // }
-
+      for (let i = 0; i < configFiles.length; i++) {
+        const configPath = configFiles[i];
+        console.log(`Applying ./${configPath}`)
+        // const secretsArgs = [ 'apply', '-f', `./${configPath}` ]
+        // await exec.exec('kubectl', secretsArgs)
+      }
     } catch (error) {
       core.error(error);
       core.setFailed(error.message);
