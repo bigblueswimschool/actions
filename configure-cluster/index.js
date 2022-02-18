@@ -41,8 +41,10 @@ const getAllFiles = async (pattern, options = null) => {
 const generateFiles = async (namespace, values) => {
   const configs = new Set();
   const files = await getAllFiles('**/*.hbs');
+  console.log(files);
 
-  for (file in files) {
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]
     const templateContents = await readFile(file);
     const template = Handlebars.compile(templateContents.toString(), { noEscape: true });
     const output = template({ namespace, ...values });
