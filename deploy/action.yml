@@ -23,7 +23,7 @@ inputs:
   repository:
     description: Repository
   version:
-    description: Repository
+    description: Version
   readinessPath:
     description: Path to determine when service is active
   cpu:
