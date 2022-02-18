@@ -177,7 +177,7 @@ const getService = async (config) => {
 
   const templateContents = await readFile('/usr/app/templates/service.yml.hbs');
   const template = Handlebars.compile(templateContents.toString(), { noEscape: true });
-  const output = template({ name, namespace });
+  const output = template({ name, namespace, ports });
   return output;
 }
 /**
@@ -262,6 +262,7 @@ async function run() {
       // await writeFile("./deployment.yml", deployment);
 
       const service = getService(inputConfig);
+      console.log(service);
       await writeFile("./service.yml", service);
 
       // const deployArgs = [ 'apply', '-f', 'deployment.yml' ]

@@ -4,13 +4,15 @@ metadata:
   name: {{ name }}
   namespace: {{ namespace }}
   annotations:
-    cloud.google.com/neg: '{ "exposed_ports": { "3000": { "name": "{{ name }}-{{ namespace }}" } } }'
+    cloud.google.com/neg: '{ \"exposed_ports\": { \"3000\": { \"name\": \"{{ name }}-{{ namespace }}\" } } }'
 spec:
   ports:
-    - name: http
-      port: 3000
-      protocol: TCP
-      targetPort: 3000
+  {{#each ports}}
+    - name: {{ this.name }}
+      port: {{ this.port }}
+      protocol: {{ this.protocol }}
+      targetPort: {{ this.targetPort }}
+  {{/each}}
   selector:
     app: {{ name }}
   type: "NodePort"
