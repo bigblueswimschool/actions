@@ -4,7 +4,7 @@ metadata:
   name: {{ name }}
   namespace: {{ namespace }}
   annotations:
-    cloud.google.com/neg: '{ \"exposed_ports\": { \"3000\": { \"name\": \"{{ name }}-{{ namespace }}\" } } }'
+    cloud.google.com/neg: '{ "exposed_ports": { "3000": { "name": "{{ name }}-{{ namespace }}" } } }'
 spec:
   ports:
   {{#each ports}}

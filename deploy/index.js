@@ -261,7 +261,7 @@ async function run() {
       // const deployment = getDeployment(inputConfig);
       // await writeFile("./deployment.yml", deployment);
 
-      const service = getService(inputConfig);
+      const service = await getService(inputConfig);
       console.log(service);
       await writeFile("./service.yml", service);
 
