@@ -6,7 +6,7 @@ metadata:
   name: {{ name }}
   namespace: default
 spec:
-  replicas: {{ .Values.replicas }}
+  replicas: {{ replicas }}
   revisionHistoryLimit: 10
   selector:
     matchLabels:

@@ -13,6 +13,7 @@ const getDeployment = async (config) => {
   const cpu = '50m';
   const memory = '256mi';
   const port = 3000;
+  const replicas = 1;
   const envSecrets = secrets.split(',').map(o => o.trim())
 
   // Container Ports
@@ -23,7 +24,7 @@ const getDeployment = async (config) => {
 
   const templateContents = await readFile('/usr/app/templates/deployment.yml.hbs');
   const template = Handlebars.compile(templateContents.toString(), { noEscape: true });
-  const output = template({ envSecrets, ...config, containerPorts, cpu, memory, port });
+  const output = template({ envSecrets, ...config, containerPorts, cpu, memory, port, replicas });
   console.log(output);
 
   // // Build configMaps
@@ -37,7 +38,7 @@ const getDeployment = async (config) => {
   // })
 
   // Build envrionment secrets
-  const envSecrets = secrets.split(',').map(o => o.trim())
+  // const envSecrets = secrets.split(',').map(o => o.trim())
   const envFrom = envSecrets.map(o => {
     return {
       "secretRef": {
