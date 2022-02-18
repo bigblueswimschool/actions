@@ -129,7 +129,6 @@ async function run() {
       // Get Kube Credentials
       await getKubeCredentials()
 
-      console.log(process.env);
       const configFiles = await generateFiles(namespace, values);
       console.log(configFiles);
 
