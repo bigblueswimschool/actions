@@ -9,6 +9,7 @@ const readFile = util.promisify(fs.readFile);
 const YAML = require('json-to-pretty-yaml');
 const Handlebars = require('handlebars');
 const { base64encode } = require('nodejs-base64');
+const glob = require('glob');
 
 Handlebars.registerHelper('base64', (string) => {
    return base64encode(string)
@@ -17,13 +18,6 @@ Handlebars.registerHelper('base64', (string) => {
 /**
  * Input fetchers
  */
-const getAppName = () => {
-  const repository = process.env.GITHUB_REPOSITORY
-  const appNameInput = core.getInput('appName')
-  const appName = appNameInput || repository.split('/')[1]
-
-  return appName
-}
 
 const getNamespace = () => {
   const namespace = core.getInput('namespace')
@@ -33,6 +27,12 @@ const getNamespace = () => {
 const getValues = () => {
    const values = core.getInput('values')
    return JSON.parse(values)
+}
+
+const generateFiles = async (namespace) => {
+  glob('**/*.hbs', null, function (err, files) {
+    console.log(files);
+  })
 }
 
 const generateRabbitMQ = async (namespace, values) => {
@@ -97,11 +97,8 @@ const getKubeCredentials = () => {
 async function run() {
     try {
       // const context = github.context;
-      const appName = getAppName()
       const namespace = getNamespace();
       const values = getValues();
-
-      core.debug(`param: appName = "${appName}"`);
 
       // Authenticate Google Cloud
       await authGCloud()
@@ -109,8 +106,10 @@ async function run() {
       // Get Kube Credentials
       await getKubeCredentials()
 
-      await generateRabbitMQ(namespace, values)
-      await generateSecrets(namespace, values)
+      await generateFiles(namespace);
+
+      // await generateRabbitMQ(namespace, values)
+      // await generateSecrets(namespace, values)
 
       console.log('Applying Secrets...')
       // const secretsArgs = [ 'apply', '-f', './secrets' ]
