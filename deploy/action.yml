@@ -18,12 +18,18 @@ inputs:
     description: Service Types (express | nestjs)
   namespace:
     description: Kubernetes namespace name.
+  replicas:
+    description: Number of replicas
   repository:
     description: Repository
   version:
     description: Repository
   readinessPath:
     description: Path to determine when service is active
+  cpu:
+    description: Requested CPU
+  memory:
+    description: Requested Memory
 runs:
   using: docker
   image: Dockerfile

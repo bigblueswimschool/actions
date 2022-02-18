@@ -8,10 +8,7 @@ const writeFile = util.promisify(fs.writeFile);
 
 const getDeployment = async (config) => {
   const { configs, type, secrets, apm } = config;
-  const cpu = '50m';
-  const memory = '256Mi';
   const port = 3000;
-  const replicas = 1;
 
   // Env
   const envFrom = [];
@@ -69,7 +66,7 @@ const getDeployment = async (config) => {
 
   const templateContents = await readFile('/usr/app/templates/deployment.yml.hbs');
   const template = Handlebars.compile(templateContents.toString(), { noEscape: true });
-  const output = template({ ...config, envFrom, containerPorts, cpu, memory, port, replicas, volumeMounts, volumes });
+  const output = template({ ...config, envFrom, containerPorts, port, volumeMounts, volumes });
   console.log(output);
 
   return output;
@@ -110,9 +107,12 @@ const getInputConfig = () => {
   const appName = appNameInput || githubRepository.split('/')[1]
   const apm = core.getInput('apm')
   const configs = core.getInput('configs')
+  const cpu = core.getInput('cpu')
   const secrets = core.getInput('secrets')
   const namespace = core.getInput('namespace')
+  const memory = core.getInput('memory')
   const readinessPath = core.getInput('readinessPath')
+  const replicas = core.getInput('replicas')
   const region = core.getInput('region')
   const repository = core.getInput('repository')
   const type = core.getInput('type')
@@ -121,11 +121,14 @@ const getInputConfig = () => {
   return {
     apm: apm || true,
     configs: configs || '',
+    cpu: cpu || '50m',
     secrets: secrets || '',
     name: appName,
     namespace: namespace || 'default',
+    memory: memory || '256Mi',
     readinessPath: readinessPath || '/info',
     region: region || null,
+    replicas: replicas || 1,
     repository,
     type: type || 'express',
     version
