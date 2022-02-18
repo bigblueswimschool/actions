@@ -32,7 +32,7 @@ spec:
           {{#each containerPorts}}
             - containerPort: {{ this.containerPort }}
           {{/each}}
-          {{if readinessPath }}
+          {{#if readinessPath }}
           readinessProbe:
             httpGet:
               path: {{ readinessPath }}
