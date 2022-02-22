@@ -67,7 +67,6 @@ const getDeployment = async (config) => {
   const templateContents = await readFile('/usr/app/templates/deployment.yml.hbs');
   const template = Handlebars.compile(templateContents.toString(), { noEscape: true });
   const output = template({ ...config, envFrom, containerPorts, port, volumeMounts, volumes });
-  console.log(output);
 
   return output;
 }
