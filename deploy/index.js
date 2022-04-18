@@ -6,6 +6,18 @@ const readFile = util.promisify(fs.readFile);
 const Handlebars = require('handlebars');
 const writeFile = util.promisify(fs.writeFile);
 
+const BASE_PATH = {
+  'address-nest': '/v2/address'
+}
+
+const CONFIGS = {
+  'address-nest': 'address-nest, auth-nest',
+}
+
+const SECRETS = {
+  'address-nest': 'apm, pgsql, google',
+}
+
 const getDeployment = async (config) => {
   const { configs, type, secrets, apm } = config;
   const port = 3000;
@@ -101,38 +113,46 @@ const getService = async (config) => {
  * Input fetchers
  */
 const getInputConfig = () => {
-  const githubRepository = process.env.GITHUB_REPOSITORY
-  const appNameInput = core.getInput('appName')
-  const appName = appNameInput || githubRepository.split('/')[1]
-  const apm = core.getInput('apm')
-  const configs = core.getInput('configs')
-  const cpu = core.getInput('cpu')
-  const secrets = core.getInput('secrets')
-  const namespace = core.getInput('namespace')
-  const memory = core.getInput('memory')
-  const storage = core.getInput('storage')
-  const readinessPath = core.getInput('readinessPath')
-  const replicas = core.getInput('replicas')
-  const region = core.getInput('region')
-  const repository = core.getInput('repository')
-  const type = core.getInput('type')
-  const version = core.getInput('version')
+  const name = core.getInput('name')
+  const basePath = BASE_PATH[name]
+
+  // TODO: Fetch config from spyglass
+  const apm = true;
+  const configs = CONFIGS[name] || null;
+  const cpu = '250m';
+  const environment = core.getInput('environment')
+
+  const imageTag = core.getInput('imageTag')
+  const image = `gcr.io/lessonbuddy-production/${name}:${imageTag}`
+
+  const secrets = SECRETS[name] || null;
+  const namespace = environment || 'default'
+  const memory = '512Mi'
+  const storage = '10Mi'
+
+  let type = 'express'
+  let readinessPath = `${basePath}/info`
+  if (name.substr(-4, 4) == 'nest') {
+    type = 'nestjs'
+    readinessPath = `${basePath}/health`
+  }
+  
+  const replicas = environment === 'production' ? 3 : 1
 
   return {
     apm: apm || true,
     configs: configs || '',
     cpu: cpu || '250m',
-    secrets: secrets || '',
-    name: appName,
+    environment: environment || 'develop',
+    image,
+    name,
     namespace: namespace || 'default',
     memory: memory || '512Mi',
-    storage: storage || '10Mi',
     readinessPath: readinessPath || '/info',
-    region: region || null,
     replicas: replicas || 1,
-    repository,
-    type: type || 'express',
-    version
+    secrets: secrets || '',
+    storage: storage || '10Mi',
+    type
   }
 }
 
@@ -151,13 +171,13 @@ const authGCloud = () => {
 /**
  * getKubeCredentials() fetches the cluster credentials
  */
-const getKubeCredentials = () => {
+const getKubeCredentials = ({ clusterName, computeZone, computeRegion, projectId }) => {
   const args = [ 'container', 'clusters', 'get-credentials' ]
 
-  if (process.env.CLUSTER_NAME) args.push(process.env.CLUSTER_NAME)
-  if (process.env.COMPUTE_ZONE) args.push('--zone', process.env.COMPUTE_ZONE)
-  if (process.env.COMPUTE_REGION) args.push('--region', process.env.COMPUTE_REGION)
-  if (process.env.PROJECT_ID) args.push('--project', process.env.PROJECT_ID)
+  if (clusterName) args.push(clusterName)
+  if (computeZone) args.push('--zone', computeZone)
+  if (computeRegion) args.push('--region', computeRegion)
+  if (projectId) args.push('--project', projectId)
 
   return exec.exec('gcloud', args)
 }
@@ -168,18 +188,13 @@ const getKubeCredentials = () => {
 async function run() {
     try {
       const inputConfig = getInputConfig();
-      const { name, namespace, repository, type, version } = inputConfig;
-
-      core.debug(`param: appName = "${name}"`);
-      core.debug(`param: namespace = "${namespace}"`);
-      core.debug(`param: repository = "${repository}"`);
-      core.debug(`param: version = "${version}"`);
+      const { name, namespace, repository, version } = inputConfig;
 
       // Authenticate Google Cloud
       await authGCloud()
 
       // Get Kube Credentials
-      await getKubeCredentials()
+      await getKubeCredentials({ clusterName: 'us-central1-develop1', computeRegion: 'us-central1', projectId: 'lessonbuddy' })
 
       const args = [ 'cluster-info' ]
 

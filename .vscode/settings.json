@@ -1,5 +1,11 @@
 {
     "files.associations": {
       "*.yml.hbs": "yaml"
+    },
+    "yaml.schemas": {
+      "https://json.schemastore.org/yamllint.json": [
+        "file:///Users/cmorford/Development/bigblue/libraries/actions/deploy/action.yml",
+        "file:///Users/cmorford/Development/bigblue/libraries/actions/configure-cluster/action.yml"
+      ]
     }
 }

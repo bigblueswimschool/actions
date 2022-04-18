@@ -1,37 +1,15 @@
-name: Big Blue Helm Action
-description: Deploys a helm chart
+name: Big Blue Deploy Action
+description: Deploys a big blue service
 author: Big Blue Swim School
 icon: box
 color: blue-dark
 inputs:
-  apm:
-    description: Enable APM (default true)
-  configs:
-    description: ConfigMaps
-  secrets:
-    description: Secrets
   name:
-    description: Name of the service
-  region:
-    description: Region of the deployment
-  type:
-    description: Service Types (express | nestjs)
-  namespace:
-    description: Kubernetes namespace name.
-  replicas:
-    description: Number of replicas
-  repository:
-    description: Repository
-  version:
-    description: Version
-  readinessPath:
-    description: Path to determine when service is active
-  cpu:
-    description: Requested CPU (default/min 250m)
-  memory:
-    description: Requested Memory (default/min 512Mi)
-  storage:
-    description: Requested Storage (default/min 10Mi)
+    description: Repository Name
+  environment:
+    description: Environment to deploy
+  imageTag:
+    description: Image Tag to deploy
 runs:
   using: docker
   image: Dockerfile
