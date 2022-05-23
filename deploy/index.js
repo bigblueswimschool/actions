@@ -7,15 +7,18 @@ const Handlebars = require('handlebars');
 const writeFile = util.promisify(fs.writeFile);
 
 const BASE_PATH = {
-  'address-nest': '/v2/address'
+  'address-nest': '/v2/address',
+  'cicd-nest': '/v2/cicd'
 }
 
 const CONFIGS = {
   'address-nest': 'address-nest, auth-nest',
+  'cicd-nest': 'cicd-nest, auth-nest',
 }
 
 const SECRETS = {
   'address-nest': 'apm, pgsql, google',
+  'cicd-nest': 'apm, pgsql, google',
 }
 
 const getDeployment = async (config) => {
