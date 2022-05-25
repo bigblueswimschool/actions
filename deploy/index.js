@@ -112,6 +112,16 @@ const getService = async (config) => {
   const output = template({ name, namespace, ports });
   return output;
 }
+
+const getConfig = async () => {
+  const name = core.getInput('name')
+  const environment = core.getInput('environment')
+  const imageTag = core.getInput('imageTag')
+  const token = core.getInput('ghaToken')
+
+  return { name, environment, imageTag, token }
+}
+
 /**
  * Input fetchers
  */
@@ -192,6 +202,9 @@ async function run() {
     try {
       const inputConfig = getInputConfig();
       const { name, environment, namespace, repository, version } = inputConfig;
+
+      const config = await getConfig();
+      console.log(config);
 
       // Authenticate Google Cloud
       await authGCloud()
