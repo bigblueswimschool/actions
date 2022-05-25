@@ -195,7 +195,6 @@ async function run() {
       const { name, environment, namespace, repository, version } = inputConfig;
 
       const config = await getConfig();
-      console.log(config);
       const clusters = config.clusters;
 
       // Authenticate Google Cloud
