@@ -191,30 +191,46 @@ const getKubeCredentials = ({ clusterName, computeZone, computeRegion, projectId
 async function run() {
     try {
       const inputConfig = getInputConfig();
-      const { name, namespace, repository, version } = inputConfig;
+      const { name, environment, namespace, repository, version } = inputConfig;
 
       // Authenticate Google Cloud
       await authGCloud()
 
-      // Get Kube Credentials
-      await getKubeCredentials({ clusterName: 'us-central1-develop1', computeRegion: 'us-central1', projectId: 'lessonbuddy' })
+      const clusters = []
 
-      const args = [ 'cluster-info' ]
+      switch (environment) {
+        case 'develop':
+          clusters.push({ clusterName: 'us-central1-develop1', computeRegion: 'us-central1', projectId: 'lessonbuddy' })
+          break;
+        case 'production':
+          clusters.push({ clusterName: 'us-central1-production1', computeRegion: 'us-central1', projectId: 'lessonbuddy-production' })
+          clusters.push({ clusterName: 'us-east1-production1', computeRegion: 'us-east1', projectId: 'lessonbuddy-production' })
+          break;
+      }
 
-      await exec.exec('kubectl', args);
+      for (let i = 0; i < clusters.length; i++) {
+        const cluster = clusters[i];
+        console.log(`Deploying to ${cluster.clusterName}`)
+        
+        // Get Kube Credentials
+        await getKubeCredentials(cluster)
 
-      const deployment = await getDeployment(inputConfig);
-      await writeFile("./deployment.yml", deployment);
+        const args = [ 'cluster-info' ]
 
-      const service = await getService(inputConfig);
-      await writeFile("./service.yml", service);
+        await exec.exec('kubectl', args);
 
-      const deployArgs = [ 'apply', '-f', 'deployment.yml' ]
-      await exec.exec('kubectl', deployArgs);
+        const deployment = await getDeployment(inputConfig);
+        await writeFile("./deployment.yml", deployment);
 
-      const serviceArgs = [ 'apply', '-f', 'service.yml' ]
-      await exec.exec('kubectl', serviceArgs);
+        const service = await getService(inputConfig);
+        await writeFile("./service.yml", service);
 
+        const deployArgs = [ 'apply', '-f', 'deployment.yml' ]
+        await exec.exec('kubectl', deployArgs);
+
+        const serviceArgs = [ 'apply', '-f', 'service.yml' ]
+        await exec.exec('kubectl', serviceArgs);
+      }
     } catch (error) {
       core.error(error);
       core.setFailed(error.message);
