@@ -18,7 +18,7 @@ const CONFIGS = {
 
 const SECRETS = {
   'address-nest': 'apm, pgsql, google',
-  'cicd-nest': 'apm, pgsql, google',
+  'cicd-nest': 'apm, github-actions, pgsql, google',
 }
 
 const getDeployment = async (config) => {
@@ -211,7 +211,7 @@ async function run() {
       for (let i = 0; i < clusters.length; i++) {
         const cluster = clusters[i];
         console.log(`Deploying to ${cluster.clusterName}`)
-        
+
         // Get Kube Credentials
         await getKubeCredentials(cluster)
 
