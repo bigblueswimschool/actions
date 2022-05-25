@@ -125,7 +125,7 @@ const getConfig = async () => {
   const token = core.getInput('ghaToken')
 
   const response = await cicdService.post(`/gha-config`, { serviceName, environmentName, imageTag }, { headers: { Authorization: `Bearer ${token}`} });
-  const config = response.data;
+  const config = JSON.parse(response.data);
   return config
 }
 
@@ -210,7 +210,8 @@ async function run() {
       const inputConfig = getInputConfig();
       const { name, environment, namespace, repository, version } = inputConfig;
 
-      const { clusters: [] } = await getConfig();
+      const config = await getConfig();
+      const clusters = config.clusters;
 
       // Authenticate Google Cloud
       await authGCloud()
