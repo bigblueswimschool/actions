@@ -126,9 +126,7 @@ const getConfig = async () => {
 
   const response = await cicdService.post(`/gha-config`, { serviceName, environmentName, imageTag }, { headers: { Authorization: `Bearer ${token}`} });
   const config = response.data;
-  console.log(config);
-
-  return { name, environment, imageTag, token }
+  return config
 }
 
 /**
