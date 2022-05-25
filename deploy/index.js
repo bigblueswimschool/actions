@@ -92,32 +92,16 @@ const getDeployment = async (config) => {
 }
 
 const getService = async (config) => {
-  const { type, name, namespace } = config;
-
-  const ports = [
-    {
-      name: 'http',
-      port: 3000,
-      protocol: 'TCP',
-      targetPort: 3000
-    }
-  ]
-
-  if (type === 'nestjs') {
-     ports.push({
-       name: 'tcp',
-       port: 3001,
-       protocol: 'TCP',
-       targetPort: 3001
-     })
-  }
-
+  const { name, namespace, ports } = config;
   const templateContents = await readFile('/usr/app/templates/service.yml.hbs');
   const template = Handlebars.compile(templateContents.toString(), { noEscape: true });
   const output = template({ name, namespace, ports });
   return output;
 }
 
+/**
+ * getConfig() fetch config from the CICD service
+ */
 const getConfig = async () => {
   const serviceName = core.getInput('name')
   const environmentName = core.getInput('environment')
@@ -231,7 +215,7 @@ async function run() {
         const deployment = await getDeployment(inputConfig);
         await writeFile("./deployment.yml", deployment);
 
-        const service = await getService(inputConfig);
+        const service = await getService(config.deployment);
         await writeFile("./service.yml", service);
 
         const deployArgs = [ 'apply', '-f', 'deployment.yml' ]
