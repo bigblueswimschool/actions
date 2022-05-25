@@ -124,7 +124,7 @@ const getConfig = async () => {
   const imageTag = core.getInput('imageTag')
   const token = core.getInput('ghaToken')
 
-  const response = await cicdService.post(`/gha-config`, { serviceName, environmentName, imageTag }, { headers: { Authorization: `Bearer ${token}`} });
+  const response = await cicdService.post(`/gha-config`, { serviceName, environmentName, imageTag }, { headers: { Authorization: `Bearer ${token}`} }).catch(err => console.log(err));
   const config = response.data;
   return config
 }

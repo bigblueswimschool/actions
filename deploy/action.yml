@@ -10,6 +10,8 @@ inputs:
     description: Environment to deploy
   imageTag:
     description: Image Tag to deploy
+  ghaToken:
+    description: Github Actions Token
 runs:
   using: docker
   image: Dockerfile
