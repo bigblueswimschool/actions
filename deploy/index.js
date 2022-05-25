@@ -1,10 +1,15 @@
 const core = require("@actions/core");
 const exec = require("@actions/exec");
 const fs = require("fs");
+const axios = require('axios');
 const util = require("util");
 const readFile = util.promisify(fs.readFile);
 const Handlebars = require('handlebars');
 const writeFile = util.promisify(fs.writeFile);
+
+const cicdService = axios.create({
+    baseURL: `https://api.spyglass.lessonbuddy.com/v2/cicd`,
+});
 
 const BASE_PATH = {
   'address-nest': '/v2/address',
@@ -114,10 +119,14 @@ const getService = async (config) => {
 }
 
 const getConfig = async () => {
-  const name = core.getInput('name')
-  const environment = core.getInput('environment')
+  const serviceName = core.getInput('name')
+  const environmentName = core.getInput('environment')
   const imageTag = core.getInput('imageTag')
   const token = core.getInput('ghaToken')
+
+  const response = await cicdService.post(`/gha-config`, { serviceName, environmentName, imageTag }, { headers: { Authorization: `Bearer ${token}`} });
+  const config = response.data;
+  console.log(config);
 
   return { name, environment, imageTag, token }
 }
