@@ -189,14 +189,14 @@ const authGCloud = () => {
 }
 
 /**
- * getKubeCredentials() fetches the cluster credentials
+ * getClusterCredentials() fetches the cluster credentials
  */
-const getKubeCredentials = ({ clusterName, computeZone, computeRegion, projectId }) => {
+const getClusterCredentials = ({ name, zone, region, projectId }) => {
   const args = [ 'container', 'clusters', 'get-credentials' ]
 
-  if (clusterName) args.push(clusterName)
-  if (computeZone) args.push('--zone', computeZone)
-  if (computeRegion) args.push('--region', computeRegion)
+  if (name) args.push(name)
+  if (zone) args.push('--zone', zone)
+  if (region) args.push('--region', region)
   if (projectId) args.push('--project', projectId)
 
   return exec.exec('gcloud', args)
@@ -210,30 +210,17 @@ async function run() {
       const inputConfig = getInputConfig();
       const { name, environment, namespace, repository, version } = inputConfig;
 
-      const config = await getConfig();
-      console.log(config);
+      const { clusters: [] } = await getConfig();
 
       // Authenticate Google Cloud
       await authGCloud()
 
-      const clusters = []
-
-      switch (environment) {
-        case 'develop':
-          clusters.push({ clusterName: 'us-central1-develop1', computeRegion: 'us-central1', projectId: 'lessonbuddy' })
-          break;
-        case 'production':
-          clusters.push({ clusterName: 'us-central1-production1', computeRegion: 'us-central1', projectId: 'lessonbuddy-production' })
-          clusters.push({ clusterName: 'us-east1-production1', computeRegion: 'us-east1', projectId: 'lessonbuddy-production' })
-          break;
-      }
-
       for (let i = 0; i < clusters.length; i++) {
         const cluster = clusters[i];
-        console.log(`Deploying to ${cluster.clusterName}`)
+        console.log(`Deploying to ${cluster.name}`)
 
-        // Get Kube Credentials
-        await getKubeCredentials(cluster)
+        // Get Cluster Credentials
+        await getClusterCredentials(cluster)
 
         const args = [ 'cluster-info' ]
 
