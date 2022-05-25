@@ -11,82 +11,16 @@ const cicdService = axios.create({
     baseURL: `https://api.spyglass.lessonbuddy.com/v2/cicd`,
 });
 
-const BASE_PATH = {
-  'address-nest': '/v2/address',
-  'cicd-nest': '/v2/cicd'
-}
-
-const CONFIGS = {
-  'address-nest': 'address-nest, auth-nest',
-  'cicd-nest': 'cicd-nest, auth-nest',
-}
-
-const SECRETS = {
-  'address-nest': 'apm, pgsql, google',
-  'cicd-nest': 'apm, github-actions, pgsql, google',
-}
-
 const getDeployment = async (config) => {
-  const { configs, type, secrets, apm } = config;
-  const port = 3000;
+  const { configs, cpu, image, memory, name, namespace, ports, readiness, replicas, secrets, storage, volumeMounts } = config;
 
-  // Env
-  const envFrom = [];
-  const envConfig = configs.split(',').map(o => o.trim())
-  const envSecrets = secrets.split(',').map(o => o.trim())
-
-  envConfig.forEach((name) => envFrom.push({ type: 'configMapRef', name }))
-  envSecrets.forEach((name) => envFrom.push({ type: 'secretRef', name }))
-
-  // Container Ports
-  const containerPorts = [{ containerPort: 3000 }]
-  if (type === 'nestjs') {
-     containerPorts.push({ containerPort: 3001 })
-  }
-
-  // Volumes
-  const volumeMounts = []
-  const volumes = []
-
-  // Load apm
-  if (apm) {
-    volumeMounts.push({
-      "name": "elastic-apm-node",
-      "mountPath": "/usr/config/elastic-apm-node.js",
-      "subPath": "elastic-apm-node.js",
-      "readOnly": true
-    })
-
-    volumes.push({
-      "name": "elastic-apm-node",
-      "secret": {
-        "secretName": "elastic-apm-node"
-      }
-    })
-  }
-
-  // Load google cloud
-  const googleIndex = envSecrets.findIndex(o => o === 'google')
-
-  if (googleIndex >= 0) {
-    volumeMounts.push({
-      "name": "google-cloud",
-      "mountPath": "/usr/config/google.json",
-      "subPath": "googleCloud.json",
-      "readOnly": true
-    })
-
-    volumes.push({
-      "name": "google-cloud",
-      "secret": {
-         "secretName": "google-cloud"
-      }
-    })
-  }
+  const envFrom = []
+  configs.forEach((config) => envFrom.push({ type: 'configMapRef', name: config.key }))
+  secrets.forEach((secret) => envFrom.push({ type: 'secretRef', name: secret.key }))
 
   const templateContents = await readFile('/usr/app/templates/deployment.yml.hbs');
   const template = Handlebars.compile(templateContents.toString(), { noEscape: true });
-  const output = template({ ...config, envFrom, containerPorts, port, volumeMounts, volumes });
+  const output = template({ cpu, envFrom, image, memory, name, namespace, ports, readiness, replicas, storage, volumeMounts });
 
   return output;
 }
@@ -111,53 +45,6 @@ const getConfig = async () => {
   const response = await cicdService.post(`/gha-config`, { serviceName, environmentName, imageTag }, { headers: { Authorization: `Bearer ${token}`} });
   const config = response.data;
   return config
-}
-
-/**
- * Input fetchers
- */
-const getInputConfig = () => {
-  const name = core.getInput('name')
-  const basePath = BASE_PATH[name]
-
-  // TODO: Fetch config from spyglass
-  const apm = true;
-  const configs = CONFIGS[name] || null;
-  const cpu = '250m';
-  const environment = core.getInput('environment')
-
-  const imageTag = core.getInput('imageTag')
-  const image = `gcr.io/lessonbuddy-production/${name}:${imageTag}`
-
-  const secrets = SECRETS[name] || null;
-  const namespace = environment || 'default'
-  const memory = '512Mi'
-  const storage = '10Mi'
-
-  let type = 'express'
-  let readinessPath = `${basePath}/info`
-  if (name.substr(-4, 4) == 'nest') {
-    type = 'nestjs'
-    readinessPath = `${basePath}/health`
-  }
-  
-  const replicas = environment === 'production' ? 3 : 1
-
-  return {
-    apm: apm || true,
-    configs: configs || '',
-    cpu: cpu || '250m',
-    environment: environment || 'develop',
-    image,
-    name,
-    namespace: namespace || 'default',
-    memory: memory || '512Mi',
-    readinessPath: readinessPath || '/info',
-    replicas: replicas || 1,
-    secrets: secrets || '',
-    storage: storage || '10Mi',
-    type
-  }
 }
 
 /**
@@ -191,9 +78,6 @@ const getClusterCredentials = ({ name, zone, region, projectId }) => {
  */
 async function run() {
     try {
-      const inputConfig = getInputConfig();
-      const { name, environment, namespace, repository, version } = inputConfig;
-
       const config = await getConfig();
       const clusters = config.clusters;
 
@@ -211,7 +95,7 @@ async function run() {
 
         await exec.exec('kubectl', args);
 
-        const deployment = await getDeployment(inputConfig);
+        const deployment = await getDeployment(config.deployment);
         await writeFile("./deployment.yml", deployment);
 
         const service = await getService(config.deployment);

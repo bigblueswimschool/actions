@@ -29,14 +29,14 @@ spec:
           stdin: true
           name: {{ name }}
           ports:
-          {{#each containerPorts}}
-            - containerPort: {{ this.containerPort }}
+          {{#each ports}}
+            - containerPort: {{ this.port }}
           {{/each}}
-          {{#if readinessPath }}
+          {{#if readiness }}
           readinessProbe:
             httpGet:
-              path: {{ readinessPath }}
-              port: {{ port }}
+              path: {{ readiness.path }}
+              port: {{ readiness.port }}
             initialDelaySeconds: 5
             periodSeconds: 5
             successThreshold: 1
@@ -68,11 +68,11 @@ spec:
       schedulerName: default-scheduler
       securityContext: {}
       terminationGracePeriodSeconds: 30
-      {{#if volumes.[0]}}
+      {{#if volumeMounts.[0]}}
       volumes:
-        {{#each volumes}}
+        {{#each volumeMounts}}
         - name: {{ this.name }}
           secret:
-            secretName: {{ this.secret.secretName }}
+            secretName: {{ this.secretName }}
         {{/each}}
       {{/if}}
