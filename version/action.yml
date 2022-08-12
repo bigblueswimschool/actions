@@ -15,6 +15,7 @@ runs:
       run: |
         git config --global user.email "${{ inputs.git-user-email }}"
         git config --global user.name "${{ inputs.git-user-name }}"
+      shell: bash
     - name: Increment Beta Version
       run: |
         CURRENT_VERSION=$(node -pe "require('./package.json').version")
@@ -28,3 +29,4 @@ runs:
         CURRENT_VERSION=$(node -pe "require('./package.json').version")
         git commit -a -m $"Build ${CURRENT_VERSION}"
         git push --set-upstream origin develop
+      shell: bash
