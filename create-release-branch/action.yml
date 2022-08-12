@@ -23,4 +23,5 @@ runs:
         CURRENT_VERSION=$(node -pe "require('./package.json').version" | cut -d '.' -f 1,2)
         git checkout -b release/${CURRENT_VERSION}
         git push --set-upstream origin release/${CURRENT_VERSION}
+        git checkout ${{ github.ref_name }}
       shell: bash
