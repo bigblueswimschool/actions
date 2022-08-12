@@ -9,10 +9,6 @@ inputs:
     description: 'Git User Name'
     required: false
     default: 'Big Blue CICD'
-  branch:
-    description: 'Branch Name'
-    required: false
-    default: 'develop'
   mode:
     description: 'Version Level to Increment'
     required: false
@@ -27,7 +23,6 @@ runs:
   steps:
     - name: Configure Git
       run: |
-        echo ${{ github.ref_name }}
         git config --global user.email "${{ inputs.git-user-email }}"
         git config --global user.name "${{ inputs.git-user-name }}"
       shell: bash
@@ -45,6 +40,6 @@ runs:
       shell: bash
     - name: Push Version
       run: |
-        echo ${{ inputs.branch }}
-        git push --set-upstream origin ${{ inputs.branch }} --tags
+        echo ${{ github.ref_name }}
+        git push --set-upstream origin ${{ github.ref_name }} --tags
       shell: bash
