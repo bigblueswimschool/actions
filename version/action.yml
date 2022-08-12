@@ -7,6 +7,10 @@ inputs:
   git-user-name:
     description: 'Git User Name'
     required: true
+  patch:
+    description: 'Enable Patch'
+    required: false
+    default: false
 
 runs:
   using: "composite"
@@ -17,6 +21,7 @@ runs:
         git config --global user.name "${{ inputs.git-user-name }}"
       shell: bash
     - name: Increment Beta Version
+      if: ${{ !inputs.patch }}
       run: |
         CURRENT_VERSION=$(node -pe "require('./package.json').version")
         BETA_REGEX="[0-9]+\.[0-9]+\.[0-9]+\-beta\.[0-9]+"
