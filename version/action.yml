@@ -9,7 +9,8 @@ inputs:
     required: true
   branch:
     description: 'Branch Name'
-    required: true
+    required: false
+    default: 'develop'
   mode:
     description: 'Version Level to Increment'
     required: false
