@@ -9,7 +9,7 @@ inputs:
     description: 'Git User Name'
     required: false
     default: 'Big Blue CICD'
-  mode:
+  level:
     description: 'Version Level to Increment'
     required: false
     default: 'patch'
@@ -26,17 +26,17 @@ runs:
         git config --global user.email "${{ inputs.git-user-email }}"
         git config --global user.name "${{ inputs.git-user-name }}"
       shell: bash
-    - name: Increment ${{ inputs.mode }} Version
-      if: "contains(inputs.mode, 'prerelease') || contains(inputs.mode, 'preminor')"
+    - name: Increment ${{ inputs.level }} Version
+      if: "contains(inputs.level, 'prerelease') || contains(inputs.level, 'preminor')"
       run: |
         npm --no-git-tag-version version prerelease --preid=beta
         CURRENT_VERSION=$(node -pe "require('./package.json').version")
         git commit -a -m $"Build ${CURRENT_VERSION}"
       shell: bash
-    - name: Increment ${{ inputs.mode }} Version
-      if: "!contains(inputs.mode, 'prerelease') && !contains(inputs.mode, 'preminor')"
+    - name: Increment ${{ inputs.level }} Version
+      if: "!contains(inputs.level, 'prerelease') && !contains(inputs.level, 'preminor')"
       run: |
-        npm version ${{ inputs.mode }}
+        npm version ${{ inputs.level }}
       shell: bash
     - name: Push Version
       run: |
