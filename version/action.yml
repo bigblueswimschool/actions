@@ -33,13 +33,12 @@ runs:
         fi
         CURRENT_VERSION=$(node -pe "require('./package.json').version")
         git commit -a -m $"Build ${CURRENT_VERSION}"
-        git push --set-upstream origin develop
+        git push --set-upstream origin ${{ inputs.branch }}
       shell: bash
     - name: Increment Patch Version
       if: "contains(inputs.branch, 'release/')"
       run: |
         echo ${{ inputs.branch }}
-        RELEASE_BRANCH_VERSION=$(node -pe "require('./package.json').version" | cut -d '.' -f 1,2)
         npm version patch
-        git push --set-upstream origin release/${RELEASE_BRANCH_VERSION} --tags
+        git push --set-upstream origin ${{ inputs.branch }} --tags
       shell: bash
