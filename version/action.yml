@@ -3,10 +3,12 @@ name: Increment Version
 inputs:
   git-user-email:
     description: 'Git User Email'
-    required: true
+    required: false
+    default: 'github@bigblueswimschool.com'
   git-user-name:
     description: 'Git User Name'
-    required: true
+    required: false
+    default: 'Big Blue CICD'
   branch:
     description: 'Branch Name'
     required: false
@@ -25,6 +27,7 @@ runs:
   steps:
     - name: Configure Git
       run: |
+        echo ${{ github.ref_name }}
         git config --global user.email "${{ inputs.git-user-email }}"
         git config --global user.name "${{ inputs.git-user-name }}"
       shell: bash
