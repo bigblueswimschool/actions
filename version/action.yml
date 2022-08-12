@@ -1,20 +1,12 @@
 name: Increment Version
 
-inputs:
-  git-user-email:
-    description: 'Git User Email'
-    required: true
-  git-user-name:
-    description: 'Git User Name'
-    required: true
-
 runs:
   using: "composite"
   steps:
     - name: Configure Git
       run: |
-        git config --global user.email "${{ inputs.git-user-email }}"
-        git config --global user.name "${{ inputs.git-user-name }}"
+        git config --global user.email "${{ secrets.GIT_USER_EMAIL }}"
+        git config --global user.name "${{ secrets.GIT_USER_NAME }}"
       shell: bash
     - name: Increment Beta Version
       run: |
