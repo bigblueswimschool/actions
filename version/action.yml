@@ -7,10 +7,9 @@ inputs:
   git-user-name:
     description: 'Git User Name'
     required: true
-  patch:
-    description: 'Enable Patch'
-    required: false
-    default: false
+  branch:
+    description: 'Branch Name'
+    required: true
 
 runs:
   using: "composite"
@@ -21,8 +20,9 @@ runs:
         git config --global user.name "${{ inputs.git-user-name }}"
       shell: bash
     - name: Increment Beta Version
-      if: ${{ !inputs.patch }}
+      if: "contains(inputs.branch, 'develop')"
       run: |
+        echo ${{ inputs.branch }}
         CURRENT_VERSION=$(node -pe "require('./package.json').version")
         BETA_REGEX="[0-9]+\.[0-9]+\.[0-9]+\-beta\.[0-9]+"
         if [[ ${CURRENT_VERSION} =~ ${BETA_REGEX} ]];
@@ -34,4 +34,12 @@ runs:
         CURRENT_VERSION=$(node -pe "require('./package.json').version")
         git commit -a -m $"Build ${CURRENT_VERSION}"
         git push --set-upstream origin develop
+      shell: bash
+    - name: Increment Patch Version
+      if: "contains(inputs.branch, 'release/')"
+      run: |
+        echo ${{ inputs.branch }}
+        RELEASE_BRANCH_VERSION=$(node -pe "require('./package.json').version" | cut -d '.' -f 1,2)
+        npm version patch
+        git push --set-upstream origin release/${RELEASE_BRANCH_VERSION} --tags
       shell: bash
