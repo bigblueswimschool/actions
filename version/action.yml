@@ -1,0 +1,30 @@
+name: Increment Version
+
+inputs:
+  git-user-email:
+    description: 'Git User Email'
+    required: true
+  git-user-name:
+    description: 'Git User Name'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Configure Git
+      run: |
+        git config --global user.email "${{ inputs.git-user-email }}"
+        git config --global user.name "${{ inputs.git-user-name }}"
+    - name: Increment Beta Version
+      run: |
+        CURRENT_VERSION=$(node -pe "require('./package.json').version")
+        BETA_REGEX="[0-9]+\.[0-9]+\.[0-9]+\-beta\.[0-9]+"
+        if [[ ${CURRENT_VERSION} =~ ${BETA_REGEX} ]];
+        then
+          npm --no-git-tag-version version prerelease --preid=beta
+        else
+          npm --no-git-tag-version version preminor --preid=beta
+        fi
+        CURRENT_VERSION=$(node -pe "require('./package.json').version")
+        git commit -a -m $"Build ${CURRENT_VERSION}"
+        git push --set-upstream origin develop
