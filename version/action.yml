@@ -7,6 +7,9 @@ inputs:
   git-user-name:
     description: 'Git User Name'
     required: true
+  branch:
+    description: 'Branch Name'
+    required: true
   mode:
     description: 'Version Level to Increment'
     required: false
@@ -15,9 +18,6 @@ inputs:
     description: 'Pre-Release id'
     required: false
     default: 'beta'
-  branch:
-    description: 'Branch Name'
-    required: true
 
 runs:
   using: "composite"
@@ -35,7 +35,7 @@ runs:
         git commit -a -m $"Build ${CURRENT_VERSION}"
       shell: bash
     - name: Increment ${{ inputs.mode }} Version
-      if: "!contains(inputs.mode, 'prerelease')"
+      if: "!contains(inputs.mode, 'prerelease') && !contains(inputs.mode, 'preminor')"
       run: |
         npm version ${{ inputs.mode }}
       shell: bash
