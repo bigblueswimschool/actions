@@ -32,14 +32,11 @@ runs:
         npm --no-git-tag-version version ${{ inputs.level }} --preid=${{ inputs.preid }}
         CURRENT_VERSION=$(node -pe "require('./package.json').version")
         git commit -a -m $"Build ${CURRENT_VERSION}"
+        git push --set-upstream origin ${{ github.ref_name }}
       shell: bash
     - name: Increment ${{ inputs.level }} Version
       if: "!contains(inputs.level, 'prerelease') && !contains(inputs.level, 'preminor')"
       run: |
         npm version ${{ inputs.level }}
-      shell: bash
-    - name: Push Version
-      run: |
-        git push --set-upstream origin ${{ github.ref_name }}
         git push --set-upstream origin ${{ github.ref_name }} --tags
       shell: bash
