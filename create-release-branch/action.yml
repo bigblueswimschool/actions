@@ -20,6 +20,7 @@ runs:
       shell: bash
     - name: Increment ${{ inputs.mode }} Version
       run: |
+        git pull
         CURRENT_VERSION=$(node -pe "require('./package.json').version" | cut -d '.' -f 1,2)
         git checkout -b release/${CURRENT_VERSION}
         git push --set-upstream origin release/${CURRENT_VERSION}
