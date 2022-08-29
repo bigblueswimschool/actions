@@ -32,12 +32,12 @@ runs:
         git pull
         npm --no-git-tag-version version ${{ inputs.level }} --preid=${{ inputs.preid }}
         CURRENT_VERSION=$(node -pe "require('./package.json').version")
-        git commit -a -m $"Build ${CURRENT_VERSION}" -m "skip ci"
+        git commit -a -m $"Build ${CURRENT_VERSION}" -m "[skip ci]"
       shell: bash
     - name: Increment ${{ inputs.level }} Version
       if: "!contains(inputs.level, 'prerelease') && !contains(inputs.level, 'preminor')"
       run: |
-        npm version ${{ inputs.level }} -m "Build %s" -m "skip ci"
+        npm version ${{ inputs.level }} -m "Build %s [skip ci]"
       shell: bash
     - name: Push Version
       run: |
