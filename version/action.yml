@@ -37,10 +37,7 @@ runs:
     - name: Increment ${{ inputs.level }} Version
       if: "!contains(inputs.level, 'prerelease') && !contains(inputs.level, 'preminor')"
       run: |
-        npm --no-git-tag-version version ${{ inputs.level }}
-        CURRENT_VERSION=$(node -pe "require('./package.json').version")
-        git commit -a -m $"Build ${CURRENT_VERSION}" -m "[skip ci]"
-        git tag ${CURRENT_VERSION}
+        npm version ${{ inputs.level }} -m "Build %s [skip ci]"
       shell: bash
     - name: Push Version
       run: |
