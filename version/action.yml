@@ -37,7 +37,7 @@ runs:
     - name: Increment ${{ inputs.level }} Version
       if: "!contains(inputs.level, 'prerelease') && !contains(inputs.level, 'preminor')"
       run: |
-        npm version ${{ inputs.level }} -m "Build %s"
+        npm version ${{ inputs.level }} -m "Build %s [skip ci]"
       shell: bash
     - name: Push Version
       run: |
