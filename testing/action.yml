@@ -1,6 +1,10 @@
 name: Run Tests
 
 inputs:
+  nodeVersion:
+    description: 'Node Version'
+    required: false
+    default: '16.x'
   npmToken:
     description: 'NPM Token'
     required: true
@@ -8,6 +12,11 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ inputs.nodeVersion }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ inputs.nodeVersion }}
     - run: npm config set //registry.npmjs.org/:_authToken=$NPM_TOKEN -g
       env:
         NPM_TOKEN: ${{ inputs.npmToken }}
