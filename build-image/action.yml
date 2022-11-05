@@ -14,6 +14,11 @@ inputs:
     description: 'Repo Base URL'
     required: true
 
+outputs:
+  build-version:
+    description: "Build Version"
+    value: ${{ steps.version.outputs.build-version }}
+
 runs:
   using: "composite"
   steps:
@@ -29,9 +34,11 @@ runs:
       run: gcloud --quiet auth configure-docker
       shell: bash
     - name: Get Version
+      id: version
       run: |
         git pull
         echo "CURRENT_VERSION=$(node -pe "require('./package.json').version")" >> $GITHUB_ENV
+        echo "::set-output name=build-version::$(node -pe "require('./package.json').version")"
       shell: bash
     - name: Build Docker Image
       run: docker build -t ${GITHUB_REPOSITORY##*/}:${{ github.run_id }} . --build-arg NPM_TOKEN=$NPM_TOKEN
