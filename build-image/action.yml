@@ -27,6 +27,7 @@ runs:
         project_id: ${{ inputs.googleProjectId }}
     - name: Authenticate Docker
       run: gcloud --quiet auth configure-docker
+      shell: bash
     - name: Get Version
       run: |
         git pull
@@ -35,7 +36,7 @@ runs:
     - name: Build Docker Image
       run: docker build -t ${GITHUB_REPOSITORY##*/}:${{ github.run_id }} . --build-arg NPM_TOKEN=$NPM_TOKEN
       env:
-        NPM_TOKEN: ${{ inputes.npmToken }}
+        NPM_TOKEN: ${{ inputs.npmToken }}
       shell: bash
     - name: Tag and Push tagged Image
       run: |
