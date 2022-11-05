@@ -25,7 +25,8 @@ const triggerDeploy = async () => {
  */
 async function run() {
   try {
-    await triggerDeploy();
+    const deploy = await triggerDeploy();
+    console.log(deploy);
   } catch (error) {
     core.error(error);
     core.setFailed(error.message);
