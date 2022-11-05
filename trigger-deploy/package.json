@@ -1,0 +1,29 @@
+{
+  "name": "trigger-deploy-action",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bigblueswimschool/actions.git"
+  },
+  "author": "Casey Morford <casey@bigblueswimschool.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bigblueswimschool/actions/issues"
+  },
+  "homepage": "https://github.com/bigblueswimschool/actions#readme",
+  "dependencies": {
+    "@actions/core": "^1.2.4",
+    "@actions/exec": "^1.0.4",
+    "@actions/github": "^2.2.0",
+    "axios": "^0.27.2",
+    "fs": "0.0.1-security",
+    "handlebars": "^4.7.7",
+    "json-to-pretty-yaml": "^1.2.2",
+    "util": "^0.12.3"
+  }
+}
