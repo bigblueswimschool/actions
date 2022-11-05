@@ -38,7 +38,7 @@ runs:
       run: |
         git pull
         echo "CURRENT_VERSION=$(node -pe "require('./package.json').version")" >> $GITHUB_ENV
-        echo "::set-output name=build-version::$(node -pe "require('./package.json').version")"
+        echo "build-version=$(node -pe "require('./package.json').version")" >> $GITHUB_OUTPUT
       shell: bash
     - name: Build Docker Image
       run: docker build -t ${GITHUB_REPOSITORY##*/}:${{ github.run_id }} . --build-arg NPM_TOKEN=$NPM_TOKEN
