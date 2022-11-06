@@ -1,5 +1,4 @@
 const core = require("@actions/core");
-const exec = require("@actions/exec");
 const axios = require('axios');
 
 const cicdService = axios.create({
@@ -7,26 +6,19 @@ const cicdService = axios.create({
 });
 
 /**
- * triggerDeploy() trigger deployment from cicd
- */
-const triggerDeploy = async () => {
-  const serviceName = core.getInput('serviceName')
-  const environmentSlug = core.getInput('environmentSlug')
-  const imageTag = core.getInput('imageTag')
-  const token = core.getInput('ghaToken')
-
-  const response = await cicdService.post(`/services/deploy`, { serviceName, environmentSlug, imageTag }, { headers: { Authorization: `Bearer ${token}`} }).catch(err => console.log(err));
-  const config = response.data;
-  return config
-}
-
-/**
- * Run executes the helm deployment.
+ * Run executes the deployment trigger.
  */
 async function run() {
   try {
-    const deploy = await triggerDeploy();
-    console.log(deploy);
+    const serviceName = core.getInput('serviceName')
+    const environmentSlug = core.getInput('environmentSlug')
+    const imageTag = core.getInput('imageTag')
+    const token = core.getInput('ghaToken')
+    console.log(`Deploying ${serviceName} ${imageTag} to ${environmentSlug}`)
+
+    await cicdService.post(`/services/deploy`,
+      { serviceName, environmentSlug, imageTag },
+      { headers: { Authorization: `Bearer ${token}`} })
   } catch (error) {
     core.error(error);
     core.setFailed(error.message);
