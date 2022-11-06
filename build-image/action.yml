@@ -33,11 +33,12 @@ runs:
     - name: Authenticate Docker
       run: gcloud --quiet auth configure-docker
       shell: bash
+    - if: "contains(github.ref, 'refs/tags')"
+      run: git pull
+      shell: bash
     - name: Get Version
       id: version
       run: |
-        echo ${{ github.ref }}
-        git pull
         echo "CURRENT_VERSION=$(node -pe "require('./package.json').version")" >> $GITHUB_ENV
         echo "build-version=$(node -pe "require('./package.json').version")" >> $GITHUB_OUTPUT
       shell: bash
