@@ -36,6 +36,7 @@ runs:
     - name: Get Version
       id: version
       run: |
+        echo ${{ github.ref }}
         git pull
         echo "CURRENT_VERSION=$(node -pe "require('./package.json').version")" >> $GITHUB_ENV
         echo "build-version=$(node -pe "require('./package.json').version")" >> $GITHUB_OUTPUT
