@@ -33,7 +33,7 @@ runs:
     - name: Authenticate Docker
       run: gcloud --quiet auth configure-docker
       shell: bash
-    - if: "contains(github.ref, 'refs/tags')"
+    - if: "!contains(github.ref, 'refs/tags')"
       run: git pull
       shell: bash
     - name: Get Version
