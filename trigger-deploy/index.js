@@ -15,7 +15,7 @@ const triggerDeploy = async () => {
   const imageTag = core.getInput('imageTag')
   const token = core.getInput('ghaToken')
 
-  const response = await cicdService.post(`/gha-config`, { serviceName, environmentName: environmentSlug, imageTag }, { headers: { Authorization: `Bearer ${token}`} }).catch(err => console.log(err));
+  const response = await cicdService.post(`/services/deploy`, { serviceName, environmentSlug, imageTag }, { headers: { Authorization: `Bearer ${token}`} }).catch(err => console.log(err));
   const config = response.data;
   return config
 }
