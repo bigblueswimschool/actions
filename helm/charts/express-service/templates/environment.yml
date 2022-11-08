@@ -1,0 +1,14 @@
+{{- if .Values.environment }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: {{ .Values.name }}
+  name: {{ .Values.name }}-env
+  namespace: {{ .Values.namespace | default "default" }}
+data:
+  {{- range $key, $val := .Values.environment }}
+  {{ $key }}: {{ $val | quote }}
+  {{- end}}
+---
+{{- end }}

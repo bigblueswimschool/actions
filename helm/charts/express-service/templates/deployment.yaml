@@ -6,7 +6,7 @@ metadata:
   name: {{ .Values.name }}
   namespace: {{ .Values.namespace | default "default" }}
 spec:
-  replicas: {{ .Values.replicas | default 1 }}
+  replicas: {{ .Values.replicas }}
   revisionHistoryLimit: 10
   selector:
     matchLabels:
@@ -44,10 +44,19 @@ spec:
             - secretRef:
                 name: {{ .name }}
             {{- end}}
+            - configMapRef:
+                name: {{ .Values.name }}-env
+                optional: true
+          {{- if (.Values.resources) }}
           resources:
             requests:
-              cpu: {{ .Values.cpu | default "50m" }}
-              memory: {{ .Values.memory | default "256Mi" }}
+              {{- if (.Values.resources.requests.cpu) }}
+              cpu: {{ .Values.resources.requests.cpu }}
+              {{- end }}
+              {{- if (.Values.resources.requests.memory) }}
+              memory: {{ .Values.resources.requests.memory }}
+              {{- end }}
+          {{- end }}
           volumeMounts:
             {{- if (.Values.apm) }}
             - name: elastic-apm-node

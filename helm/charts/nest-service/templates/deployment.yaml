@@ -39,6 +39,7 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 5
             successThreshold: 1
+            timeoutSeconds: 5
           {{- end }}
           envFrom:
             {{- range .Values.secrets }}

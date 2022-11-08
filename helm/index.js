@@ -59,14 +59,16 @@ const authGCloud = () => {
  * getKubeCredentials() fetches the cluster credentials
  */
 const getKubeCredentials = () => {
-  const args = [ 'container', 'clusters', 'get-credentials' ]
-
-  if (process.env.CLUSTER_NAME) args.push(process.env.CLUSTER_NAME)
-  if (process.env.COMPUTE_ZONE) args.push('--zone', process.env.COMPUTE_ZONE)
-  if (process.env.COMPUTE_REGION) args.push('--region', process.env.COMPUTE_REGION)
-  if (process.env.PROJECT_ID) args.push('--project', process.env.PROJECT_ID)
-
-  return exec.exec('gcloud', args)
+  return exec.exec('gcloud', [
+    'container',
+    'clusters',
+    'get-credentials',
+    process.env.CLUSTER_NAME,
+    '--zone',
+    process.env.COMPUTE_ZONE,
+    '--project',
+    process.env.PROJECT_ID
+  ])
 }
 
 /**
@@ -74,23 +76,23 @@ const getKubeCredentials = () => {
  */
 async function run() {
     try {
-      // const context = github.context;
+      // const context = github.context;  
       const appName = getAppName()
       const namespace = getNamespace()
       const chart = getChart()
       const values = getValues()
-
+      
       core.debug(`param: appName = "${appName}"`);
       core.debug(`param: namespace = "${namespace}"`);
       core.debug(`param: chart = "${chart}"`);
       core.debug(`param: values = "${values}"`);
-
+      
       // Authenticate Google Cloud
       await authGCloud()
 
       // Get Kube Credentials
       await getKubeCredentials()
-
+      
       // Write values file
       await writeFile("./values.yml", values);
 
@@ -103,19 +105,17 @@ async function run() {
           "--namespace",
           namespace,
           "--values",
-          "values.yml",
-          "--debug",
-          "--dry-run"
+          "values.yml"
       ];
 
       process.env.HELM_HOME = "/root/.helm/"
-
+  
       await exec.exec('helm', args);
-
+      
     } catch (error) {
       core.error(error);
       core.setFailed(error.message);
     }
   }
-
+  
   run();
