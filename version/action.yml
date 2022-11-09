@@ -1,0 +1,45 @@
+name: Increment Version
+
+inputs:
+  git-user-email:
+    description: 'Git User Email'
+    required: false
+    default: 'github@bigblueswimschool.com'
+  git-user-name:
+    description: 'Git User Name'
+    required: false
+    default: 'Big Blue CICD'
+  level:
+    description: 'Version Level to Increment'
+    required: false
+    default: 'patch'
+  preid:
+    description: 'Pre-Release id'
+    required: false
+    default: 'beta'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Configure Git
+      run: |
+        git config --global user.email "${{ inputs.git-user-email }}"
+        git config --global user.name "${{ inputs.git-user-name }}"
+      shell: bash
+    - name: Increment ${{ inputs.level }} Version
+      if: "contains(inputs.level, 'prerelease') || contains(inputs.level, 'preminor')"
+      run: |
+        git pull
+        npm --no-git-tag-version version ${{ inputs.level }} --preid=${{ inputs.preid }}
+        CURRENT_VERSION=$(node -pe "require('./package.json').version")
+        git commit -a -m $"Build ${CURRENT_VERSION}" -m "skip ci"
+      shell: bash
+    - name: Increment ${{ inputs.level }} Version
+      if: "!contains(inputs.level, 'prerelease') && !contains(inputs.level, 'preminor')"
+      run: |
+        npm version ${{ inputs.level }} -m "Build %s"
+      shell: bash
+    - name: Push Version
+      run: |
+        git push --set-upstream origin ${{ github.ref_name }} --tags
+      shell: bash

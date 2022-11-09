@@ -1,0 +1,17 @@
+name: Big Blue Trigger Deploy Action
+description: Triggers a CICD Deployment
+author: Big Blue Swim School
+icon: box
+color: blue-dark
+inputs:
+  serviceName:
+    description: Service Name
+  environmentSlug:
+    description: Environment to deploy
+  imageTag:
+    description: Image Tag to deploy
+  ghaToken:
+    description: Github Actions Token
+runs:
+  using: docker
+  image: Dockerfile

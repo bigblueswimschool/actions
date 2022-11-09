@@ -1,0 +1,28 @@
+name: Create Release Branch
+
+inputs:
+  git-user-email:
+    description: 'Git User Email'
+    required: false
+    default: 'github@bigblueswimschool.com'
+  git-user-name:
+    description: 'Git User Name'
+    required: false
+    default: 'Big Blue CICD'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Configure Git
+      run: |
+        git config --global user.email "${{ inputs.git-user-email }}"
+        git config --global user.name "${{ inputs.git-user-name }}"
+      shell: bash
+    - name: Increment ${{ inputs.mode }} Version
+      run: |
+        git pull
+        CURRENT_VERSION=$(node -pe "require('./package.json').version" | cut -d '.' -f 1,2)
+        git checkout -b release/${CURRENT_VERSION}
+        git push --set-upstream origin release/${CURRENT_VERSION}
+        git checkout ${{ github.ref_name }}
+      shell: bash
