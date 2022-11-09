@@ -1,0 +1,54 @@
+name: Build Image
+
+inputs:
+  googleCredentials:
+    description: 'Google Credentials'
+    required: true
+  googleProjectId:
+    description: 'Google Project ID'
+    required: true
+  npmToken:
+    description: 'NPM Token'
+    required: true
+  imageRepositoryBaseUrl:
+    description: 'Repo Base URL'
+    required: true
+
+outputs:
+  build-version:
+    description: "Build Version"
+    value: ${{ steps.version.outputs.build-version }}
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v3
+    - uses: 'google-github-actions/auth@v0'
+      with:
+        credentials_json: ${{ inputs.googleCredentials }}
+    - name: Authenticate GoogleCloud
+      uses: google-github-actions/setup-gcloud@v0
+      with:
+        project_id: ${{ inputs.googleProjectId }}
+    - name: Authenticate Docker
+      run: gcloud --quiet auth configure-docker
+      shell: bash
+    - if: "!contains(github.ref, 'refs/tags')"
+      run: git pull
+      shell: bash
+    - name: Get Version
+      id: version
+      run: |
+        echo "CURRENT_VERSION=$(node -pe "require('./package.json').version")" >> $GITHUB_ENV
+        echo "build-version=$(node -pe "require('./package.json').version")" >> $GITHUB_OUTPUT
+      shell: bash
+    - name: Build Docker Image
+      run: docker build -t ${GITHUB_REPOSITORY##*/}:${{ github.run_id }} . --build-arg NPM_TOKEN=$NPM_TOKEN
+      env:
+        NPM_TOKEN: ${{ inputs.npmToken }}
+      shell: bash
+    - name: Tag and Push tagged Image
+      run: |
+        docker tag ${GITHUB_REPOSITORY##*/}:${{ github.run_id }} ${{ inputs.imageRepositoryBaseUrl }}/${GITHUB_REPOSITORY##*/}:${{ env.CURRENT_VERSION }}
+        docker push ${{ inputs.imageRepositoryBaseUrl }}/${GITHUB_REPOSITORY##*/}:${{ env.CURRENT_VERSION }}
+      shell: bash
