@@ -82,7 +82,7 @@ async function run() {
       const serviceName = values.name
       const imageTag = values.version
 
-      const environmentSlug = null;
+      let environmentSlug = null;
 
       switch (clusterName) {
         case 'develop-cluster':
