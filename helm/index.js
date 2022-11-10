@@ -78,10 +78,30 @@ async function run() {
     try {
       let jsonValues = core.getInput('jsonValues')
       const values = JSON.parse(jsonValues)
-      console.log(values);
+      const clusterName = process.env.CLUSTER_NAME
+      const serviceName = values.name
+      const imageTag = value.version
 
-      console.log(process.env.CLUSTER_NAME);
+      const environmentSlug = null;
+
+      switch (clusterName) {
+        case 'develop-cluster':
+          environmentSlug = 'develop';
+        break;
+
+        case 'production-cluster-1':
+        case 'demo-cluster-1':
+          environmentSlug = 'production';
+        break;
+      }
       
+      if (serviceName && environmentSlug && imageTag) {
+        console.log(serviceName, environmentSlug, imageTag);
+      } else {
+        const error = new Error('Missing deployment information')
+        core.error(error);
+        core.setFailed(error.message);
+      }  
     } catch (error) {
       core.error(error);
       core.setFailed(error.message);
