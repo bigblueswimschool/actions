@@ -80,7 +80,7 @@ async function run() {
       const values = JSON.parse(jsonValues)
       const clusterName = process.env.CLUSTER_NAME
       const serviceName = values.name
-      const imageTag = value.version
+      const imageTag = values.version
 
       const environmentSlug = null;
 
