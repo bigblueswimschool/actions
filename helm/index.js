@@ -76,41 +76,11 @@ const getKubeCredentials = () => {
  */
 async function run() {
     try {
-      // const context = github.context;  
-      const appName = getAppName()
-      const namespace = getNamespace()
-      const chart = getChart()
-      const values = getValues()
-      
-      core.debug(`param: appName = "${appName}"`);
-      core.debug(`param: namespace = "${namespace}"`);
-      core.debug(`param: chart = "${chart}"`);
-      core.debug(`param: values = "${values}"`);
-      
-      // Authenticate Google Cloud
-      await authGCloud()
+      let jsonValues = core.getInput('jsonValues')
+      const values = JSON.parse(jsonValues)
+      console.log(values);
 
-      // Get Kube Credentials
-      await getKubeCredentials()
-      
-      // Write values file
-      await writeFile("./values.yml", values);
-
-      // Setup command options and arguments.
-      const args = [
-          "upgrade",
-          appName,
-          chart,
-          "--install",
-          "--namespace",
-          namespace,
-          "--values",
-          "values.yml"
-      ];
-
-      process.env.HELM_HOME = "/root/.helm/"
-  
-      await exec.exec('helm', args);
+      console.log(process.env.CLUSTER_NAME);
       
     } catch (error) {
       core.error(error);
