@@ -23,9 +23,7 @@ const getGhaToken = async () => {
     'access',
     'latest',
     '--secret="GHA_TOKEN"',
-    '--format=\'get(payload.data)\'',
-    '--project',
-    process.env.CLUSTER_NAME
+    '--format=\'get(payload.data)\''
   ])
   const buff = Buffer.from(token, 'base64');
   console.log(buff.toString());
