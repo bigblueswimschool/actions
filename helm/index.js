@@ -22,8 +22,8 @@ const getGhaToken = async () => {
     'versions',
     'access',
     'latest',
-    '--secret="GHA_TOKEN"',
-    '--format="get(payload.data)"',
+    '--secret',
+    'GHA_TOKEN',
     '--project',
     'lessonbuddy-production'
   ])
