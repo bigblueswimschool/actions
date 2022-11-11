@@ -6,14 +6,16 @@ const cicdService = axios.create({
     baseURL: `https://api.spyglass.lessonbuddy.com/v2/cicd`,
 });
 
- const getGhaToken = () => {
-  const token = exec.exec('gcloud', [
+ const getGhaToken = async () => {
+  const token = await exec.exec('gcloud', [
     'secrets',
     'versions',
     'access',
     'latest',
     '--secret="GHA_TOKEN"',
-    '--format=\'get(payload.data)\''
+    '--format=\'get(payload.data)\'',
+    '--project',
+    process.env.CLUSTER_NAME
   ])
   const buff = Buffer.from(token, 'base64');
   console.log(buff.toString());
@@ -33,7 +35,7 @@ async function run() {
       let environmentSlug = null;
 
       const token = getGhaToken();
-      
+
       switch (clusterName) {
         case 'develop-cluster':
           environmentSlug = 'develop';
