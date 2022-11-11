@@ -27,7 +27,6 @@ const getGhaToken = async () => {
     '--project',
     'lessonbuddy-production'
   ])
-  console.log(token);
   return token;
 }
 
@@ -59,7 +58,12 @@ async function run() {
       }
       
       if (serviceName && environmentSlug && imageTag) {
-        console.log(serviceName, environmentSlug, imageTag);
+        console.log(`Deploying ${serviceName} ${imageTag} to ${environmentSlug}`)
+
+        await cicdService.post(`/services/deploy`,
+          { serviceName, environmentSlug, imageTag },
+          { headers: { Authorization: `Bearer ${token}`} })
+
       } else {
         const error = new Error('Missing deployment information')
         core.error(error);
