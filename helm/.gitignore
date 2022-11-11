@@ -1,2 +1,3 @@
 node_modules
 configs
+gha_secret.txt

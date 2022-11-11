@@ -18,10 +18,8 @@
   "homepage": "https://github.com/bigblueswimschool/helm-deploy-action#readme",
   "dependencies": {
     "@actions/core": "^1.2.4",
-    "@actions/exec": "^1.0.4",
+    "@actions/exec": "~1.1.1",
     "@actions/github": "^2.2.0",
-    "fs": "0.0.1-security",
-    "json-to-pretty-yaml": "^1.2.2",
-    "util": "^0.12.3"
+    "axios": "^0.27.2"
   }
 }

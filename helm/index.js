@@ -1,74 +1,22 @@
 const core = require("@actions/core");
-const github = require("@actions/github");
 const exec = require("@actions/exec");
-const fs = require("fs");
-const util = require("util");
-const writeFile = util.promisify(fs.writeFile);
-const YAML = require('json-to-pretty-yaml');
+const axios = require('axios');
 
-/**
- * Input fetchers
- */
-const getAppName = () => {
-  const repository = process.env.GITHUB_REPOSITORY
-  const appNameInput = core.getInput('appName')
-  const appName = appNameInput || repository.split('/')[1]
+const cicdService = axios.create({
+    baseURL: `https://api.spyglass.lessonbuddy.com/v2/cicd`,
+});
 
-  return appName
-}
-
-const getNamespace = () => {
-  const namespace = core.getInput('namespace')
-  return namespace || 'default'
-}
-
-const getChart = () => {
-  const chart = core.getInput('chart', { required: true })
-  return `/usr/app/charts/${chart}`
-}
-
-const getValues = () => {
-  let yamlValues = core.getInput('values')
-  let jsonValues = core.getInput('jsonValues')
-
-  if (yamlValues) {
-    console.log('yaml values provided')
-    return yamlValues
-  } else if (jsonValues) {
-    console.log('json values provided')
-    jsonValues = jsonValues || {}
-    yamlValues = YAML.stringify(JSON.parse(jsonValues))
-    return yamlValues
-  }
-  return null
-}
-
-/**
- * authGCloud() activates the service account using the ENV var
- */
-const authGCloud = () => {
-  return exec.exec('gcloud', [
-    'auth',
-    'activate-service-account',
-    '--key-file',
-    `${process.env.GOOGLE_APPLICATION_CREDENTIALS}`
+ const getGhaToken = () => {
+  const token = exec.exec('gcloud', [
+    'secrets',
+    'versions',
+    'access',
+    'latest',
+    '--secret="GHA_TOKEN"',
+    '--format=\'get(payload.data)\''
   ])
-}
-
-/**
- * getKubeCredentials() fetches the cluster credentials
- */
-const getKubeCredentials = () => {
-  return exec.exec('gcloud', [
-    'container',
-    'clusters',
-    'get-credentials',
-    process.env.CLUSTER_NAME,
-    '--zone',
-    process.env.COMPUTE_ZONE,
-    '--project',
-    process.env.PROJECT_ID
-  ])
+  const buff = Buffer.from(token, 'base64');
+  console.log(buff.toString());
 }
 
 /**
@@ -84,6 +32,8 @@ async function run() {
 
       let environmentSlug = null;
 
+      const token = getGhaToken();
+      
       switch (clusterName) {
         case 'develop-cluster':
           environmentSlug = 'develop';
