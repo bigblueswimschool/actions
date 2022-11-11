@@ -6,7 +6,17 @@ const cicdService = axios.create({
     baseURL: `https://api.spyglass.lessonbuddy.com/v2/cicd`,
 });
 
- const getGhaToken = async () => {
+const authGCloud = () => {
+  return exec.exec('gcloud', [
+    'auth',
+    'activate-service-account',
+    '--key-file',
+    `${process.env.GOOGLE_APPLICATION_CREDENTIALS}`
+  ])
+}
+
+
+const getGhaToken = async () => {
   const token = await exec.exec('gcloud', [
     'secrets',
     'versions',
@@ -34,7 +44,8 @@ async function run() {
 
       let environmentSlug = null;
 
-      const token = getGhaToken();
+      await authGCloud();
+      const token = await getGhaToken();
 
       switch (clusterName) {
         case 'develop-cluster':
