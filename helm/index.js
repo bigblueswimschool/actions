@@ -36,7 +36,6 @@ const getGhaToken = async () => {
     'lessonbuddy-production'
   ], options)
   token = token.trim()
-  console.log('token', token)
   return token;
 }
 
