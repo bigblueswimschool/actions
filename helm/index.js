@@ -27,8 +27,8 @@ const getGhaToken = async () => {
     '--project',
     'lessonbuddy-production'
   ])
-  const buff = Buffer.from(token, 'base64');
-  console.log(buff.toString());
+  console.log(token);
+  return token;
 }
 
 /**
