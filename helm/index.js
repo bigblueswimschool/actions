@@ -17,7 +17,15 @@ const authGCloud = () => {
 
 
 const getGhaToken = async () => {
-  const token = await exec.exec('gcloud', [
+  let token = ''
+
+  const options = {};
+  options.listeners = {
+    stdout: (data) => {
+      token += data.toString()
+    }
+  }
+  await exec.exec('gcloud', [
     'secrets',
     'versions',
     'access',
