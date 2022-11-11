@@ -23,7 +23,9 @@ const getGhaToken = async () => {
     'access',
     'latest',
     '--secret="GHA_TOKEN"',
-    '--format=\'get(payload.data)\''
+    '--format="get(payload.data)"',
+    '--project',
+    'lessonbuddy-production'
   ])
   const buff = Buffer.from(token, 'base64');
   console.log(buff.toString());
