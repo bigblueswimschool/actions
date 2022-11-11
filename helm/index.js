@@ -34,7 +34,7 @@ const getGhaToken = async () => {
     'GHA_TOKEN',
     '--project',
     'lessonbuddy-production'
-  ])
+  ], options)
   console.log('token', token)
   return token;
 }
