@@ -17,6 +17,7 @@ runs:
       uses: actions/setup-node@v3
       with:
         node-version: ${{ inputs.nodeVersion }}
+        cache: 'yarn'
     - run: npm config set //registry.npmjs.org/:_authToken=$NPM_TOKEN -g
       env:
         NPM_TOKEN: ${{ inputs.npmToken }}
