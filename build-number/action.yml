@@ -5,6 +5,7 @@ icon: box
 color: blue-dark
 inputs:
   prefix:
+    required: false
     description: 'Build Prefix'
   token:
     description: 'Repo Token'
@@ -12,5 +13,5 @@ outputs:
   build_number:
     description: 'Generated build number'
 runs:
-  using: node12
+  using: node16
   main: index.js
