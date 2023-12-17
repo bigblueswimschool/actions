@@ -1,6 +1,7 @@
 const fs = require('fs');
 const async = require('async');
 const core = require("@actions/core");
+const exec = require("@actions/exec");
 const axios = require('axios');
 
 const tagPrefix = 'build-'
@@ -87,6 +88,11 @@ async function run() {
         console.log(`Build number already generated: ${buildNumber}`);
         fs.writeFileSync(process.env.GITHUB_ENV, `BUILD_NUMBER=${buildNumber}`);
         console.log(`echo "build_number::${buildNumber}" >> $GITHUB_OUTPUT`);
+        exec.exec('echo', [
+          `"build_number::${buildNumber}"`,
+          `>>`,
+          `$GITHUB_OUTPUT`,
+        ])
         return;
     }
 
@@ -117,7 +123,12 @@ async function run() {
     //Setting the output and a environment variable to new build number...
     fs.writeFileSync(process.env.GITHUB_ENV, `BUILD_NUMBER=${buildNumber}`);
     console.log(`echo "build_number::${buildNumber}" >> $GITHUB_OUTPUT`);
-
+    exec.exec('echo', [
+      `"build_number::${buildNumber}"`,
+      `>>`,
+      `$GITHUB_OUTPUT`,
+    ])
+    
     // Save to file
     fs.writeFileSync(path, buildNumber.toString());
 
