@@ -86,7 +86,7 @@ async function run() {
         const buildNumber = fs.readFileSync(path);
         console.log(`Build number already generated: ${buildNumber}`);
         fs.writeFileSync(process.env.GITHUB_ENV, `BUILD_NUMBER=${buildNumber}`);
-        core.setOutput('build_number', buildNumber);
+        core.setOutput('build-number', buildNumber);
         return;
     }
 
@@ -116,7 +116,7 @@ async function run() {
 
     //Setting the output and a environment variable to new build number...
     fs.writeFileSync(process.env.GITHUB_ENV, `BUILD_NUMBER=${buildNumber}`);
-    core.setOutput('build_number', buildNumber);
+    core.setOutput('build-number', buildNumber);
 
     // Save to file
     fs.writeFileSync(path, buildNumber.toString());

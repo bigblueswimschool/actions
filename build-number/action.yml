@@ -10,7 +10,7 @@ inputs:
   token:
     description: 'Repo Token'
 outputs:
-  build_number:
+  build-number:
     description: 'Generated build number'
 runs:
   using: node16
