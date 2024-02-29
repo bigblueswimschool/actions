@@ -27,7 +27,7 @@ runs:
       with:
         credentials_json: ${{ inputs.googleCredentials }}
     - name: Authenticate GoogleCloud
-      uses: google-github-actions/setup-gcloud@v1
+      uses: google-github-actions/setup-gcloud@v2
       with:
         project_id: ${{ inputs.googleProjectId }}
     - name: Authenticate Docker

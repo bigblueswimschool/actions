@@ -1,4 +1,4 @@
-FROM bigblueswimschool/alpine-node-16-gcloud
+FROM node:20-alpine
 
 WORKDIR /usr/app/
 COPY . /usr/app/
