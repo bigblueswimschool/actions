@@ -10,8 +10,8 @@ inputs:
   npmToken:
     description: 'NPM Token'
     required: true
-  imageRepositoryBaseUrl:
-    description: 'Repo Base URL'
+  registryDomain:
+    description: 'Registry Domain'
     required: true
 
 outputs:
@@ -27,16 +27,12 @@ runs:
       with:
         credentials_json: ${{ inputs.googleCredentials }}
     - name: Authenticate GoogleCloud
-      id: auth
       uses: google-github-actions/setup-gcloud@v2
       with:
         project_id: ${{ inputs.googleProjectId }}
-    - name: Login to Artifact Registry
-      uses: docker/login-action@v1
-      with:
-        registry: us-central1-docker.pkg.dev
-        username: oauth2accesstoken
-        password: ${{ steps.auth.outputs.access_token }}
+    - name: Authenticate Docker
+      run: gcloud auth configure-docker ${{ inputs.registryDomain }} --quiet 
+      shell: bash
     - if: "!contains(github.ref, 'refs/tags')"
       run: git pull
       shell: bash
@@ -53,6 +49,6 @@ runs:
       shell: bash
     - name: Tag and Push tagged Image
       run: |
-        docker tag ${GITHUB_REPOSITORY##*/}:${{ github.run_id }} ${{ inputs.imageRepositoryBaseUrl }}/${GITHUB_REPOSITORY##*/}:${{ env.CURRENT_VERSION }}
-        docker push ${{ inputs.imageRepositoryBaseUrl }}/${GITHUB_REPOSITORY##*/}:${{ env.CURRENT_VERSION }}
+        docker tag ${GITHUB_REPOSITORY##*/}:${{ github.run_id }} ${{ inputs.registryDomain }}/${{ inputs.googleProjectId }}/${GITHUB_REPOSITORY##*/}:${{ env.CURRENT_VERSION }}
+        docker push ${{ inputs.registryDomain }}/${{ inputs.googleProjectId }}/${GITHUB_REPOSITORY##*/}:${{ env.CURRENT_VERSION }}
       shell: bash
