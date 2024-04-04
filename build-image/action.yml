@@ -49,6 +49,6 @@ runs:
       shell: bash
     - name: Tag and Push tagged Image
       run: |
-        docker tag ${GITHUB_REPOSITORY##*/}:${{ github.run_id }} ${{ inputs.registryDomain }}/${{ inputs.googleProjectId }}/${GITHUB_REPOSITORY##*/}:${{ env.CURRENT_VERSION }}
-        docker push ${{ inputs.registryDomain }}/${{ inputs.googleProjectId }}/${GITHUB_REPOSITORY##*/}:${{ env.CURRENT_VERSION }}
+        docker tag ${GITHUB_REPOSITORY##*/}:${{ github.run_id }} ${{ inputs.registryDomain }}/${{ inputs.googleProjectId }}/${GITHUB_REPOSITORY##*/}/${GITHUB_REPOSITORY##*/}:${{ env.CURRENT_VERSION }}
+        docker push ${{ inputs.registryDomain }}/${{ inputs.googleProjectId }}/${GITHUB_REPOSITORY##*/}/${GITHUB_REPOSITORY##*/}:${{ env.CURRENT_VERSION }}
       shell: bash
