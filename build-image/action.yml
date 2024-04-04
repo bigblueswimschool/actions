@@ -27,12 +27,16 @@ runs:
       with:
         credentials_json: ${{ inputs.googleCredentials }}
     - name: Authenticate GoogleCloud
+      id: auth
       uses: google-github-actions/setup-gcloud@v2
       with:
         project_id: ${{ inputs.googleProjectId }}
-    - name: Authenticate Docker
-      run: gcloud --quiet auth configure-docker
-      shell: bash
+    - name: Login to Artifact Registry
+      uses: docker/login-action@v1
+      with:
+        registry: us-west2-docker.pkg.dev
+        username: oauth2accesstoken
+        password: ${{ steps.auth.outputs.access_token }}
     - if: "!contains(github.ref, 'refs/tags')"
       run: git pull
       shell: bash
