@@ -1,0 +1,19 @@
+{
+    "name": "actions",
+    "version": "1.2.0-beta.0",
+    "description": "Big Blue Swim School's GitHub Actions",
+    "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/bigblueswimschool/actions.git"
+    },
+    "author": "Casey Morford <casey@bigblueswimschool.com>",
+    "license": "ISC",
+    "bugs": {
+      "url": "https://github.com/bigblueswimschool/actions/issues"
+    },
+    "homepage": "https://github.com/bigblueswimschool/actions#readme"
+  }
+  

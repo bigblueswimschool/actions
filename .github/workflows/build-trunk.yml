@@ -1,0 +1,21 @@
+name: Build Trunk
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [develop]
+
+jobs:
+  version:
+    name: Increment Version
+    runs-on: bigblue-linux-latest
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout Repo
+      - uses: bigblueswimschool/actions/version@production
+        name: Increment Pre-Release Version
+        with:
+          level: 'prerelease'
