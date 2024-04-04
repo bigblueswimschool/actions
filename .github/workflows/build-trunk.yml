@@ -11,7 +11,7 @@ on:
 jobs:
   version:
     name: Increment Version
-    runs-on: bigblue-linux-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         name: Checkout Repo
