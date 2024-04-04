@@ -12,12 +12,12 @@ jobs:
       name: Checkout Repo
       with:
         token: ${{ secrets.PAT }}
-    - uses: bigblueswimschool/actions/version@production
+    - uses: bigblueswimschool/actions/version@v1
       name: Commit and Tag Current Version
     - uses: actions/checkout@v4
-    - uses: bigblueswimschool/actions/create-release-branch@production
+    - uses: bigblueswimschool/actions/create-release-branch@v1
       name: Create Release Branch
-    - uses: bigblueswimschool/actions/version@production
+    - uses: bigblueswimschool/actions/version@v1
       name: Increment Minor Version on develop Branch
       with:
         level: 'preminor'

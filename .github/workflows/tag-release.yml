@@ -14,5 +14,5 @@ jobs:
       name: Checkout Repo
       with:
         token: ${{ secrets.PAT }}
-    - uses: bigblueswimschool/actions/version@production
+    - uses: bigblueswimschool/actions/version@v1
       name: Increment Patch Version
