@@ -1,0 +1,23 @@
+name: Create Release Branch
+
+on:
+  workflow_dispatch:
+
+jobs:
+  version:
+    name: Create Release Branch
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      name: Checkout Repo
+      with:
+        token: ${{ secrets.PAT }}
+    - uses: bigblueswimschool/actions/version@production
+      name: Commit and Tag Current Version
+    - uses: actions/checkout@v4
+    - uses: bigblueswimschool/actions/create-release-branch@production
+      name: Create Release Branch
+    - uses: bigblueswimschool/actions/version@production
+      name: Increment Minor Version on develop Branch
+      with:
+        level: 'preminor'
