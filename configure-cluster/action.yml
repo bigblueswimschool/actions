@@ -1,0 +1,15 @@
+name: Big Blue Cluster Configuration Action
+description: Configures a Cluster
+author: Big Blue Swim School
+icon: box
+color: blue-dark
+inputs:
+  namespace:
+    description: Namespace
+  values:
+    description: Clear Text Values (JSON String)
+  secrets:
+    description: Secrets (JSON String)
+runs:
+  using: docker
+  image: Dockerfile
