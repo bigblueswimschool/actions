@@ -61,8 +61,11 @@ async function run() {
         break;
 
         case 'production-cluster-1':
-        case 'demo-cluster-1':
           environmentSlug = 'production';
+        break;
+
+        case 'demo-cluster-1':
+          environmentSlug = 'demo';
         break;
       }
       
