@@ -7,7 +7,10 @@ inputs:
     default: '16.x'
   npmToken:
     description: 'NPM Token'
-    required: true
+    required: false
+  githubToken:
+    description: 'GitHub Token'
+    required: false
 
 runs:
   using: "composite"
@@ -18,9 +21,15 @@ runs:
       with:
         node-version: ${{ inputs.nodeVersion }}
         cache: 'yarn'
-    - run: npm config set //registry.npmjs.org/:_authToken=$NPM_TOKEN -g
+    - if: ${{ inputs.inputs.npmToken != '' }}
+      run: npm config set //registry.npmjs.org/:_authToken=$NPM_TOKEN -g
       env:
         NPM_TOKEN: ${{ inputs.npmToken }}
+      shell: bash
+    - if: ${{ inputs.inputs.githubToken != '' }}
+      run: npm config set //npm.pkg.github.com/:_authToken=$GITHUB_TOKEN -g
+      env:
+        GITHUB_TOKEN: ${{ inputs.githubToken }}
       shell: bash
     - run: |
         yarn
