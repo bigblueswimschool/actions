@@ -8,7 +8,7 @@ inputs:
   githubToken:
     description: 'GitHub Token
     required: false
-    default: ${{ secrets.GITHUB_TOKEN }}
+    default: ''
 
 runs:
   using: "composite"
