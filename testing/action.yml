@@ -18,11 +18,13 @@ runs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ inputs.nodeVersion }}
-        registry-url: 'https://npm.pkg.github.com'
         cache: 'yarn'
+    - name: Authenticate with private registry
+      run: npm config set //npm.pkg.github.com/:_authToken=$GITHUB_TOKEN -g
+      env:
+        GITHUB_TOKEN: ${{ inputs.githubToken }}
+      shell: bash
     - run: |
         yarn
         yarn test
-      env:
-        NODE_AUTH_TOKEN: ${{ inputs.githubToken }}
       shell: bash
