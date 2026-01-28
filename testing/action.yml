@@ -5,6 +5,10 @@ inputs:
     description: 'Node Version'
     required: false
     default: '16.x'
+  githubToken:
+    description: 'GitHub Token'
+    required: false
+    default: '${{ github.token }}'  
 
 runs:
   using: "composite"
@@ -19,7 +23,7 @@ runs:
     - name: Authenticate with private registry
       run: npm config set //npm.pkg.github.com/:_authToken=$GITHUB_TOKEN -g
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ inputs.githubToken }}
       shell: bash
     - run: |
         yarn
