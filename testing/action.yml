@@ -22,7 +22,7 @@ runs:
     - name: Authenticate with private registry
       run: npm config set //npm.pkg.github.com/:_authToken=$GITHUB_TOKEN -g
       env:
-        GITHUB_TOKEN: ${{ inputs.githubToken }}
+        GITHUB_TOKEN: ${{ github.token }}
       shell: bash
     - run: |
         yarn
