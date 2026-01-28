@@ -21,7 +21,6 @@ runs:
         registry-url: 'https://npm.pkg.github.com'
         scope: '@bigblueswimschool'
         cache: 'yarn'
-      shell: bash
     - run: |
         yarn
         yarn test
