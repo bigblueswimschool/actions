@@ -5,6 +5,9 @@ inputs:
     description: 'Node Version'
     required: false
     default: '16.x'
+  githubToken:
+    description: 'GitHub Token'
+    required: false
 
 runs:
   using: "composite"
@@ -16,9 +19,10 @@ runs:
         node-version: ${{ inputs.nodeVersion }}
         cache: 'yarn'
     - name: Authenticate with private registry
+      if: ${{ inputs.inputs.githubToken != '' }}
       run: npm config set //npm.pkg.github.com/:_authToken=$GITHUB_TOKEN -g
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ inputs.githubToken }}
       shell: bash
     - run: |
         yarn
