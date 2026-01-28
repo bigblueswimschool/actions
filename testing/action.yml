@@ -6,9 +6,8 @@ inputs:
     required: false
     default: '16.x'
   githubToken:
-    description: 'GitHub Token
+    description: 'GitHub Token'
     required: false
-    default: ''
 
 runs:
   using: "composite"
