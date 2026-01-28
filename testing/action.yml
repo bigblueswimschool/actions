@@ -5,10 +5,6 @@ inputs:
     description: 'Node Version'
     required: false
     default: '16.x'
-  githubToken:
-    description: 'GitHub Token'
-    required: false
-    default: '${{ github.token }}'  
 
 runs:
   using: "composite"
