@@ -7,9 +7,6 @@ inputs:
   googleProjectId:
     description: 'Google Project ID'
     required: true
-  npmToken:
-    description: 'NPM Token'
-    required: true
   registryDomain:
     description: 'Registry Domain'
     required: true
@@ -46,9 +43,9 @@ runs:
         echo "build-version=$(node -pe "require('./package.json').version")" >> $GITHUB_OUTPUT
       shell: bash
     - name: Build Docker Image
-      run: docker build -t ${GITHUB_REPOSITORY##*/}:${{ github.run_id }} . --build-arg NPM_TOKEN=$NPM_TOKEN
+      run: docker build -t ${GITHUB_REPOSITORY##*/}:${{ github.run_id }} . --build-arg GITHUB_TOKEN=$GITHUB_TOKEN
       env:
-        NPM_TOKEN: ${{ inputs.npmToken }}
+        GITHUB_TOKEN: ${{ github.token }}
       shell: bash
     - name: Tag and Push tagged Image
       run: |
