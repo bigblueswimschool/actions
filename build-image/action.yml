@@ -13,6 +13,9 @@ inputs:
   repository:
     description: 'Repository Name'
     required: true
+  pat:
+    description: 'Personal Access Token'
+    required: true
 
 outputs:
   build-version:
@@ -43,9 +46,9 @@ runs:
         echo "build-version=$(node -pe "require('./package.json').version")" >> $GITHUB_OUTPUT
       shell: bash
     - name: Build Docker Image
-      run: docker build --secret id=github_token,env=$GITHUB_TOKEN -t ${GITHUB_REPOSITORY##*/}:${{ github.run_id }} .
+      run: docker build -t ${GITHUB_REPOSITORY##*/}:${{ github.run_id }} . --build-arg GITHUB_TOKEN=$GITHUB_TOKEN
       env:
-        GITHUB_TOKEN: ${{ github.token }}
+        GITHUB_TOKEN: ${{ inputs.pat }}
       shell: bash
     - name: Tag and Push tagged Image
       run: |
