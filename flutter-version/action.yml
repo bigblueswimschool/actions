@@ -36,11 +36,11 @@ runs:
           build="${BASH_REMATCH[4]}"
           case "$level" in
             major)
-              major=$((major + 1)); minor=0; patch=0; build=1 ;;
+              major=$((major + 1)); minor=0; patch=0; build=$((build + 1)) ;;
             preminor)
-              minor=$((minor + 1)); patch=0; build=1 ;;
+              minor=$((minor + 1)); patch=0; build=$((build + 1)) ;;
             patch)
-              patch=$((patch + 1)); build=1 ;;
+              patch=$((patch + 1)); build=$((build + 1)) ;;
             prerelease)
               build=$((build + 1)) ;;
             *)
@@ -69,11 +69,11 @@ runs:
           build="${BASH_REMATCH[4]}"
           case "$level" in
             major)
-              major=$((major + 1)); minor=0; patch=0; build=1 ;;
+              major=$((major + 1)); minor=0; patch=0; build=$((build + 1)) ;;
             minor)
-              minor=$((minor + 1)); patch=0; build=1 ;;
+              minor=$((minor + 1)); patch=0; build=$((build + 1)) ;;
             patch)
-              patch=$((patch + 1)); build=1 ;;
+              patch=$((patch + 1)); build=$((build + 1)) ;;
             prerelease)
               build=$((build + 1)) ;;
             *)
