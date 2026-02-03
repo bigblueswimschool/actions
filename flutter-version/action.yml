@@ -47,7 +47,7 @@ runs:
               echo "Invalid level: $level. Use major, minor, patch, or build."; exit 1 ;;
           esac
           CURRENT_VERSION="$major.$minor.$patch+$build"
-          sed -i '' "s/^version: .*/version: $CURRENT_VERSION/" "$file"
+          sed -i "s/^version: .*/version: $CURRENT_VERSION/" "$file"
           echo "Updated version: $CURRENT_VERSION"
         else
           echo "Version not found or invalid format."; exit 1
@@ -80,7 +80,7 @@ runs:
               echo "Invalid level: $level. Use major, minor, patch, or build."; exit 1 ;;
           esac
           CURRENT_VERSION="$major.$minor.$patch+$build"
-          sed -i '' "s/^version: .*/version: $CURRENT_VERSION/" "$file"
+          sed -i "s/^version: .*/version: $CURRENT_VERSION/" "$file"
           echo "Updated version: $CURRENT_VERSION"
         else
           echo "Version not found or invalid format."; exit 1
