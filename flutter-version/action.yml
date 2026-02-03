@@ -22,6 +22,11 @@ runs:
         git config --global user.email "${{ inputs.git-user-email }}"
         git config --global user.name "${{ inputs.git-user-name }}"
       shell: bash
+    - name: Generate build number
+      id: build-number
+      uses: bigblueswimschool/actions/build-number@production
+      with:
+        token: ${{ secrets.github_token }}
     - name: Increment ${{ inputs.level }} Version
       if: "contains(inputs.level, 'prerelease') || contains(inputs.level, 'preminor')"
       run: |
@@ -46,7 +51,7 @@ runs:
             *)
               echo "Invalid level: $level. Use major, minor, patch, or build."; exit 1 ;;
           esac
-          CURRENT_VERSION="$major.$minor.$patch+$build"
+          CURRENT_VERSION="$major.$minor.$patch+${{ steps.build-number.outputs.build-number }}"
           sed -i "s/^version: .*/version: $CURRENT_VERSION/" "$file"
           echo "Updated version: $CURRENT_VERSION"
         else
@@ -79,7 +84,7 @@ runs:
             *)
               echo "Invalid level: $level. Use major, minor, patch, or build."; exit 1 ;;
           esac
-          CURRENT_VERSION="$major.$minor.$patch+$build"
+          CURRENT_VERSION="$major.$minor.$patch+${{ steps.build-number.outputs.build-number }}"
           sed -i "s/^version: .*/version: $CURRENT_VERSION/" "$file"
           echo "Updated version: $CURRENT_VERSION"
         else
