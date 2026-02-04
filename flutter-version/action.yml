@@ -90,8 +90,9 @@ runs:
         else
           echo "Version not found or invalid format."; exit 1
         fi
-        git commit -a -m $"Build ${CURRENT_VERSION}" -m "skip ci"
-        git tag "v$CURRENT_VERSION"
+        BUILD_VERSION=$(grep '^version: ' pubspec.yaml | sed 's/version: //; s/+.*//')
+        git commit -a -m $"Build ${BUILD_VERSION}" -m "skip ci"
+        git tag "$BUILD_VERSION"
       shell: bash
     - name: Push Version
       run: |
