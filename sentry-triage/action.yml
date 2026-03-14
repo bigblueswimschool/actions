@@ -1,0 +1,82 @@
+name: Sentry Triage
+description: Fetch unresolved Sentry issues, create ClickUp tasks, propose fixes with Claude, and open draft PRs.
+
+inputs:
+  sentry_project_slug:
+    description: Sentry project slug
+    required: true
+  sentry_org_slug:
+    description: Sentry organization slug
+    required: true
+  clickup_list_id:
+    description: ClickUp list ID to file tasks into
+    required: true
+  sentry_token:
+    description: Sentry internal integration token
+    required: true
+  clickup_token:
+    description: ClickUp personal API token
+    required: true
+  anthropic_api_key:
+    description: Anthropic API key
+    required: true
+  gh_token:
+    description: GitHub PAT with repo and workflow scopes
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout target repo
+      uses: actions/checkout@v4
+      with:
+        token: ${{ inputs.gh_token }}
+        path: _target
+
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install dependencies
+      run: npm ci
+      shell: bash
+      working-directory: ${{ github.action_path }}
+
+    - name: Fetch Sentry issues
+      run: node ${{ github.action_path }}/scripts/fetch-sentry.js
+      shell: bash
+      env:
+        SENTRY_TOKEN: ${{ inputs.sentry_token }}
+        SENTRY_ORG: ${{ inputs.sentry_org_slug }}
+        SENTRY_PROJECT: ${{ inputs.sentry_project_slug }}
+        OUTPUT_FILE: /tmp/sentry-issues.json
+
+    - name: Create ClickUp tasks
+      run: node ${{ github.action_path }}/scripts/create-clickup-task.js
+      shell: bash
+      env:
+        CLICKUP_TOKEN: ${{ inputs.clickup_token }}
+        CLICKUP_LIST_ID: ${{ inputs.clickup_list_id }}
+        ISSUES_FILE: /tmp/sentry-issues.json
+        OUTPUT_FILE: /tmp/clickup-tasks.json
+
+    - name: Propose fixes with Claude
+      run: node ${{ github.action_path }}/scripts/claude-propose-fix.js
+      shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic_api_key }}
+        ISSUES_FILE: /tmp/sentry-issues.json
+        TARGET_REPO_PATH: _target
+        OUTPUT_FILE: /tmp/proposals.json
+
+    - name: Open draft PRs
+      run: node ${{ github.action_path }}/scripts/open-pr.js
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.gh_token }}
+        TARGET_REPO: ${{ github.repository }}
+        TARGET_BRANCH: ${{ github.ref_name }}
+        PROPOSALS_FILE: /tmp/proposals.json
+        CLICKUP_TASKS_FILE: /tmp/clickup-tasks.json
+        CLICKUP_TOKEN: ${{ inputs.clickup_token }}

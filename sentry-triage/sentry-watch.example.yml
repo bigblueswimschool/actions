@@ -1,0 +1,25 @@
+# Copy this file to .github/workflows/sentry-watch.yml in your consuming repo
+# and update the inputs below.
+
+name: Sentry Watch
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  repository_dispatch:
+    types: [sentry-alert]
+  workflow_dispatch:
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: bigblueswimschool/actions/sentry-triage@main
+        with:
+          sentry_project_slug: "api-service"    # change per repo
+          sentry_org_slug: "bigblue"
+          clickup_list_id: "901234567"          # change per repo/team
+          sentry_token: ${{ secrets.SENTRY_TOKEN }}
+          clickup_token: ${{ secrets.CLICKUP_TOKEN }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          gh_token: ${{ secrets.GH_TOKEN }}
