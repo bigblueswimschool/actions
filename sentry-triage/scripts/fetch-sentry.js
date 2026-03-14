@@ -1,7 +1,7 @@
 import { writeFileSync } from 'fs';
 import { log } from './utils/logger.js';
 
-const { SENTRY_TOKEN, SENTRY_ORG, SENTRY_PROJECT, OUTPUT_FILE } = process.env;
+const { SENTRY_TOKEN, SENTRY_ORG, SENTRY_PROJECT, SENTRY_ENVIRONMENT, OUTPUT_FILE } = process.env;
 
 async function sentryRequest(path) {
   const res = await fetch(`https://sentry.io/api/0${path}`, {
@@ -50,10 +50,12 @@ function extractInAppFrames(event) {
 }
 
 async function main() {
-  log(`Fetching unresolved issues for ${SENTRY_ORG}/${SENTRY_PROJECT}`);
+  const envLabel = SENTRY_ENVIRONMENT ?? 'all environments';
+  log(`Fetching unresolved issues for ${SENTRY_ORG}/${SENTRY_PROJECT} (${envLabel})`);
 
+  const envParam = SENTRY_ENVIRONMENT ? `&environment=${encodeURIComponent(SENTRY_ENVIRONMENT)}` : '';
   const issues = await sentryRequest(
-    `/projects/${SENTRY_ORG}/${SENTRY_PROJECT}/issues/?query=is:unresolved&limit=25&expand=owners`,
+    `/projects/${SENTRY_ORG}/${SENTRY_PROJECT}/issues/?query=is:unresolved&limit=25&expand=owners${envParam}`,
   );
 
   log(`Found ${issues.length} unresolved issues`);

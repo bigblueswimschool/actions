@@ -23,6 +23,10 @@ inputs:
   gh_token:
     description: GitHub PAT with repo and workflow scopes
     required: true
+  sentry_environment:
+    description: Sentry environment to filter issues by (e.g. production). Omit to fetch from all environments.
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -50,6 +54,7 @@ runs:
         SENTRY_TOKEN: ${{ inputs.sentry_token }}
         SENTRY_ORG: ${{ inputs.sentry_org_slug }}
         SENTRY_PROJECT: ${{ inputs.sentry_project_slug }}
+        SENTRY_ENVIRONMENT: ${{ inputs.sentry_environment }}
         OUTPUT_FILE: /tmp/sentry-issues.json
 
     - name: Create ClickUp tasks
