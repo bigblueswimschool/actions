@@ -60,6 +60,8 @@ runs:
         CLICKUP_LIST_ID: ${{ inputs.clickup_list_id }}
         SENTRY_TOKEN: ${{ inputs.sentry_token }}
         SENTRY_ORG: ${{ inputs.sentry_org_slug }}
+        GH_TOKEN: ${{ inputs.gh_token }}
+        TARGET_REPO: ${{ github.repository }}
         ISSUES_FILE: /tmp/sentry-issues.json
         OUTPUT_FILE: /tmp/clickup-tasks.json
 
