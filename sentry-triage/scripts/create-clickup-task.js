@@ -71,12 +71,24 @@ async function sentryRequest(path, method = 'GET', body = null) {
 }
 
 async function fetchClickUpIntegrationId() {
-  const integrations = await sentryRequest(
-    `/organizations/${SENTRY_ORG}/integrations/?provider_key=clickup`,
+  const integrations = await sentryRequest(`/organizations/${SENTRY_ORG}/integrations/`);
+
+  const integration = integrations?.find((i) =>
+    i.provider?.key?.toLowerCase().includes('clickup') ||
+    i.provider?.name?.toLowerCase().includes('clickup') ||
+    i.name?.toLowerCase().includes('clickup'),
   );
-  const integration = integrations?.[0];
-  if (!integration) throw new Error(`No ClickUp integration found for org ${SENTRY_ORG}`);
-  log(`Found ClickUp integration: ${integration.id} (${integration.name})`);
+
+  if (!integration) {
+    const available = (integrations ?? [])
+      .map((i) => `${i.provider?.key} (${i.name})`)
+      .join(', ');
+    throw new Error(
+      `No ClickUp integration found for org ${SENTRY_ORG}. Available integrations: ${available || 'none'}`,
+    );
+  }
+
+  log(`Found ClickUp integration: ${integration.id} (${integration.provider?.key} — ${integration.name})`);
   return integration.id;
 }
 
