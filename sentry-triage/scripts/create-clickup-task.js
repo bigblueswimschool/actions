@@ -1,7 +1,10 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { log } from './utils/logger.js';
 
-const { CLICKUP_TOKEN, CLICKUP_LIST_ID, ISSUES_FILE, OUTPUT_FILE } = process.env;
+const { CLICKUP_TOKEN, ISSUES_FILE, OUTPUT_FILE } = process.env;
+
+// Accept either the bare numeric ID ("381197225") or the ClickUp view format ("6-381197225-1")
+const CLICKUP_LIST_ID = (process.env.CLICKUP_LIST_ID ?? '').replace(/^\d+-(\d+)-\d+$/, '$1');
 
 async function clickupRequest(path, method = 'GET', body = null) {
   const res = await fetch(`https://api.clickup.com/api/v2${path}`, {
@@ -76,6 +79,19 @@ async function buildDedupMap() {
   return map;
 }
 
+async function closeResolvedTasks(dedupMap, unresolvedIds) {
+  for (const [sentryId, taskId] of dedupMap) {
+    if (!unresolvedIds.has(sentryId)) {
+      log(`Sentry issue ${sentryId} is resolved — closing ClickUp task ${taskId}`);
+      try {
+        await clickupRequest(`/task/${taskId}`, 'PUT', { status: 'closed' });
+      } catch (err) {
+        log(`  Warning: could not close task ${taskId}: ${err.message}`);
+      }
+    }
+  }
+}
+
 async function main() {
   const issues = JSON.parse(readFileSync(ISSUES_FILE, 'utf8'));
   log(`Loaded ${issues.length} issues from ${ISSUES_FILE}`);
@@ -83,6 +99,9 @@ async function main() {
   log('Building dedup map from existing ClickUp tasks...');
   const dedupMap = await buildDedupMap();
   log(`Found ${dedupMap.size} existing sentry-linked tasks`);
+
+  const unresolvedIds = new Set(issues.map((i) => i.id));
+  await closeResolvedTasks(dedupMap, unresolvedIds);
 
   const taskMap = {};
 
