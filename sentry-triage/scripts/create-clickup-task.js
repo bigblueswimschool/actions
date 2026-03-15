@@ -70,38 +70,14 @@ async function sentryRequest(path, method = 'GET', body = null) {
   return res.json();
 }
 
-async function fetchClickUpIntegrationId() {
-  const integrations = await sentryRequest(`/organizations/${SENTRY_ORG}/integrations/`);
-
-  const integration = integrations?.find((i) =>
-    i.provider?.key?.toLowerCase().includes('clickup') ||
-    i.provider?.name?.toLowerCase().includes('clickup') ||
-    i.name?.toLowerCase().includes('clickup'),
-  );
-
-  if (!integration) {
-    const available = (integrations ?? [])
-      .map((i) => `${i.provider?.key} (${i.name})`)
-      .join(', ');
-    throw new Error(
-      `No ClickUp integration found for org ${SENTRY_ORG}. Available integrations: ${available || 'none'}`,
-    );
-  }
-
-  log(`Found ClickUp integration: ${integration.id} (${integration.provider?.key} — ${integration.name})`);
-  return integration.id;
-}
-
-async function linkSentryIssue(issueId, integrationId, clickupTaskId, clickupTaskUrl) {
+async function commentOnSentryIssue(issueId, clickupTaskId, clickupTaskUrl) {
   try {
-    await sentryRequest(`/issues/${issueId}/external-issues/`, 'POST', {
-      integration_id: integrationId,
-      external_issue_key: clickupTaskId,
-      external_url: clickupTaskUrl,
+    await sentryRequest(`/issues/${issueId}/comments/`, 'POST', {
+      text: `ClickUp task created: [${clickupTaskId}](${clickupTaskUrl})`,
     });
-    log(`  Linked Sentry issue ${issueId} → ClickUp task ${clickupTaskId}`);
+    log(`  Commented ClickUp link on Sentry issue ${issueId}`);
   } catch (err) {
-    log(`  Warning: could not link Sentry issue ${issueId}: ${err.message}`);
+    log(`  Warning: could not comment on Sentry issue ${issueId}: ${err.message}`);
   }
 }
 
@@ -180,8 +156,6 @@ async function main() {
   const issues = JSON.parse(readFileSync(ISSUES_FILE, 'utf8'));
   log(`Loaded ${issues.length} issues from ${ISSUES_FILE}`);
 
-  const integrationId = await fetchClickUpIntegrationId();
-
   log('Building dedup map from existing ClickUp tasks...');
   const dedupMap = await buildDedupMap();
   log(`Found ${dedupMap.size} existing sentry-linked tasks`);
@@ -213,7 +187,7 @@ async function main() {
     taskMap[issue.id] = task.id;
     newSentryIds.push(issue.id);
 
-    await linkSentryIssue(issue.id, integrationId, task.id, `https://app.clickup.com/t/${task.id}`);
+    await commentOnSentryIssue(issue.id, task.id, `https://app.clickup.com/t/${task.id}`);
   }
 
   writeFileSync(OUTPUT_FILE, JSON.stringify({ taskMap, newSentryIds }, null, 2));
