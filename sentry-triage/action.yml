@@ -67,6 +67,7 @@ runs:
       env:
         ANTHROPIC_API_KEY: ${{ inputs.anthropic_api_key }}
         ISSUES_FILE: /tmp/sentry-issues.json
+        CLICKUP_TASKS_FILE: /tmp/clickup-tasks.json
         TARGET_REPO_PATH: _target
         OUTPUT_FILE: /tmp/proposals.json
 

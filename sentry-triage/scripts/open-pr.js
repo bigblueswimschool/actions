@@ -118,7 +118,7 @@ async function commentOnClickUpTask(taskId, pr, shortId) {
 
 async function main() {
   const proposals = JSON.parse(readFileSync(PROPOSALS_FILE, 'utf8'));
-  const taskMap = JSON.parse(readFileSync(CLICKUP_TASKS_FILE, 'utf8'));
+  const { taskMap } = JSON.parse(readFileSync(CLICKUP_TASKS_FILE, 'utf8'));
 
   log(`Loaded ${proposals.length} proposals`);
 

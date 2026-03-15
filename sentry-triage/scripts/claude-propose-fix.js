@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, basename } from 'path';
 import { log } from './utils/logger.js';
 
-const { ANTHROPIC_API_KEY, ISSUES_FILE, TARGET_REPO_PATH, OUTPUT_FILE } = process.env;
+const { ANTHROPIC_API_KEY, ISSUES_FILE, CLICKUP_TASKS_FILE, TARGET_REPO_PATH, OUTPUT_FILE } = process.env;
 
 const STRIP_PREFIXES = ['', '/app/', '/home/user/project/', '/'];
 
@@ -121,8 +121,12 @@ async function callClaude(prompt) {
 }
 
 async function main() {
-  const issues = JSON.parse(readFileSync(ISSUES_FILE, 'utf8'));
-  log(`Loaded ${issues.length} issues`);
+  const allIssues = JSON.parse(readFileSync(ISSUES_FILE, 'utf8'));
+  const { newSentryIds } = JSON.parse(readFileSync(CLICKUP_TASKS_FILE, 'utf8'));
+  const newIds = new Set(newSentryIds);
+
+  const issues = allIssues.filter((i) => newIds.has(i.id));
+  log(`${issues.length} new issue(s) to analyse (${allIssues.length - issues.length} already have proposals — skipping)`);
 
   const proposals = [];
 

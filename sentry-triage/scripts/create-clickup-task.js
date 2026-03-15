@@ -104,6 +104,7 @@ async function main() {
   await closeResolvedTasks(dedupMap, unresolvedIds);
 
   const taskMap = {};
+  const newSentryIds = [];
 
   for (const issue of issues) {
     if (dedupMap.has(issue.id)) {
@@ -124,10 +125,11 @@ async function main() {
 
     log(`Created task ${task.id} for issue ${issue.shortId}`);
     taskMap[issue.id] = task.id;
+    newSentryIds.push(issue.id);
   }
 
-  writeFileSync(OUTPUT_FILE, JSON.stringify(taskMap, null, 2));
-  log(`Wrote task map to ${OUTPUT_FILE}`);
+  writeFileSync(OUTPUT_FILE, JSON.stringify({ taskMap, newSentryIds }, null, 2));
+  log(`Wrote task map to ${OUTPUT_FILE} (${newSentryIds.length} new, ${issues.length - newSentryIds.length} existing)`);
 }
 
 main().catch((err) => {
