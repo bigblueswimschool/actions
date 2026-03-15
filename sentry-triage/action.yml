@@ -58,6 +58,8 @@ runs:
       env:
         CLICKUP_TOKEN: ${{ inputs.clickup_token }}
         CLICKUP_LIST_ID: ${{ inputs.clickup_list_id }}
+        SENTRY_TOKEN: ${{ inputs.sentry_token }}
+        SENTRY_ORG: ${{ inputs.sentry_org_slug }}
         ISSUES_FILE: /tmp/sentry-issues.json
         OUTPUT_FILE: /tmp/clickup-tasks.json
 

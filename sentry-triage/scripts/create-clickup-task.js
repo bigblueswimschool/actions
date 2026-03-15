@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { log } from './utils/logger.js';
 
-const { CLICKUP_TOKEN, ISSUES_FILE, OUTPUT_FILE } = process.env;
+const { CLICKUP_TOKEN, SENTRY_TOKEN, SENTRY_ORG, ISSUES_FILE, OUTPUT_FILE } = process.env;
 
 // Accept either the bare numeric ID ("381197225") or the ClickUp view format ("6-381197225-1")
 const CLICKUP_LIST_ID = (process.env.CLICKUP_LIST_ID ?? '').replace(/^\d+-(\d+)-\d+$/, '$1');
@@ -52,6 +52,47 @@ ${frameBlock || '  (no in-app frames)'}
 ${sentinel(issue.id)}`;
 }
 
+async function sentryRequest(path, method = 'GET', body = null) {
+  const res = await fetch(`https://sentry.io/api/0${path}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${SENTRY_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: body !== null ? JSON.stringify(body) : undefined,
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Sentry ${method} ${path} → ${res.status}: ${text}`);
+  }
+
+  return res.json();
+}
+
+async function fetchClickUpIntegrationId() {
+  const integrations = await sentryRequest(
+    `/organizations/${SENTRY_ORG}/integrations/?provider_key=clickup`,
+  );
+  const integration = integrations?.[0];
+  if (!integration) throw new Error(`No ClickUp integration found for org ${SENTRY_ORG}`);
+  log(`Found ClickUp integration: ${integration.id} (${integration.name})`);
+  return integration.id;
+}
+
+async function linkSentryIssue(issueId, integrationId, clickupTaskId, clickupTaskUrl) {
+  try {
+    await sentryRequest(`/issues/${issueId}/external-issues/`, 'POST', {
+      integration_id: integrationId,
+      external_issue_key: clickupTaskId,
+      external_url: clickupTaskUrl,
+    });
+    log(`  Linked Sentry issue ${issueId} → ClickUp task ${clickupTaskId}`);
+  } catch (err) {
+    log(`  Warning: could not link Sentry issue ${issueId}: ${err.message}`);
+  }
+}
+
 async function buildDedupMap() {
   const map = new Map();
 
@@ -96,6 +137,8 @@ async function main() {
   const issues = JSON.parse(readFileSync(ISSUES_FILE, 'utf8'));
   log(`Loaded ${issues.length} issues from ${ISSUES_FILE}`);
 
+  const integrationId = await fetchClickUpIntegrationId();
+
   log('Building dedup map from existing ClickUp tasks...');
   const dedupMap = await buildDedupMap();
   log(`Found ${dedupMap.size} existing sentry-linked tasks`);
@@ -126,6 +169,8 @@ async function main() {
     log(`Created task ${task.id} for issue ${issue.shortId}`);
     taskMap[issue.id] = task.id;
     newSentryIds.push(issue.id);
+
+    await linkSentryIssue(issue.id, integrationId, task.id, `https://app.clickup.com/t/${task.id}`);
   }
 
   writeFileSync(OUTPUT_FILE, JSON.stringify({ taskMap, newSentryIds }, null, 2));
