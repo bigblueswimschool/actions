@@ -28,6 +28,36 @@ function resolveFile(filename, repoPath) {
   return null;
 }
 
+/**
+ * Derive candidate source files from the Sentry culprit string.
+ * e.g. "location.getOne" → look for location.service.ts, location.controller.ts
+ */
+function resolveFilesFromCulprit(culprit, repoPath) {
+  if (!culprit) return [];
+
+  const [module] = culprit.split('.');
+  if (!module) return [];
+
+  const candidates = [
+    `src/modules/${module}/${module}.service.ts`,
+    `src/modules/${module}/${module}.controller.ts`,
+    `src/modules/${module}/${module}.entity.ts`,
+    `src/${module}/${module}.service.ts`,
+    `src/${module}/${module}.controller.ts`,
+    `src/${module}/${module}.entity.ts`,
+  ];
+
+  const results = [];
+  for (const candidate of candidates) {
+    const resolved = join(repoPath, candidate);
+    if (existsSync(resolved)) {
+      results.push({ relative: candidate, absolute: resolved });
+    }
+  }
+
+  return results;
+}
+
 function buildPrompt(issue, sourceFiles) {
   const frameLines = issue.frames
     .map((f) => `  ${f.filename}:${f.lineNo} — ${f.function}`)
@@ -45,7 +75,7 @@ function buildPrompt(issue, sourceFiles) {
     ? sourceFiles
         .map((sf) => `### ${sf.filename}\n\`\`\`typescript\n${sf.content}\n\`\`\``)
         .join('\n\n')
-    : '(no source files resolved — stack-trace-only analysis)';
+    : '(no source files resolved)';
 
   return `You are a senior NestJS/TypeScript engineer performing automated bug triage.
 
@@ -65,6 +95,20 @@ ${frameLines || '  (none)'}
 
 ## Relevant Source Files
 ${sourceBlock}
+
+---
+
+## Critical Rules
+
+1. **ONLY reference files, classes, methods, columns, and relations that appear in the source files above.** If no source files were resolved, you MUST set confidence to "low" and describe what files you WOULD need to see rather than guessing at code that might exist.
+
+2. **Never fabricate entity fields, relation names, or repository references.** If the source code for an entity or service is not provided above, do not guess its schema. Instead, state what information is missing.
+
+3. **Patches must target files that exist in the "Relevant Source Files" section above.** Do not create patches for files you have not seen. If the culprit points to a method but no source was provided, set confidence to "low" and explain what file needs to be examined.
+
+4. **The "oldCode" in patches must be an EXACT substring** of the source file content shown above. Copy it character-for-character. If you cannot identify the exact code to replace, do not propose a patch — instead describe the fix in the PR body and set confidence to "low".
+
+5. **For performance issues**: look for N+1 queries, missing SELECT column restrictions, unnecessary JOIN/eager-loading, missing indexes, or large payload serialisation in the provided source. Match the existing code patterns in the file (e.g., if the codebase uses raw SQL via dataSource.query(), propose raw SQL — not query builder).
 
 ---
 
@@ -168,12 +212,23 @@ async function main() {
 
       const resolved = resolveFile(frame.filename, TARGET_REPO_PATH);
       if (resolved) {
-        const content = readFileSync(resolved, 'utf8').slice(0, 3000);
+        const content = readFileSync(resolved, 'utf8').slice(0, 8000);
         sourceFiles.push({ filename: frame.filename, content });
         log(`  Resolved ${frame.filename} → ${resolved}`);
       } else {
         log(`  Could not resolve ${frame.filename}`);
       }
+    }
+
+    // Fallback: resolve source files from the culprit string (e.g. "location.getOne")
+    // This is critical for performance issues that often have no in-app stack frames
+    const culpritFiles = resolveFilesFromCulprit(issue.culprit, TARGET_REPO_PATH);
+    for (const { relative, absolute } of culpritFiles) {
+      if (seen.has(relative)) continue;
+      seen.add(relative);
+      const content = readFileSync(absolute, 'utf8').slice(0, 8000);
+      sourceFiles.push({ filename: relative, content });
+      log(`  Resolved from culprit: ${relative}`);
     }
 
     const prompt = buildPrompt(issue, sourceFiles);
