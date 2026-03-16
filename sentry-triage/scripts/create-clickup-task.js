@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { log } from './utils/logger.js';
 
-const { CLICKUP_TOKEN, SENTRY_TOKEN, SENTRY_ORG, GH_TOKEN, TARGET_REPO, ISSUES_FILE, OUTPUT_FILE } = process.env;
+const { CLICKUP_TOKEN, SENTRY_TOKEN, SENTRY_ORG, SENTRY_PROJECT, GH_TOKEN, TARGET_REPO, ISSUES_FILE, OUTPUT_FILE } = process.env;
 
 // Accept either the bare numeric ID ("381197225") or the ClickUp view format ("6-381197225-1")
 const CLICKUP_LIST_ID = (process.env.CLICKUP_LIST_ID ?? '').replace(/^\d+-(\d+)-\d+$/, '$1');
@@ -27,7 +27,7 @@ async function clickupRequest(path, method = 'GET', body = null) {
 const PRIORITY_MAP = { fatal: 1, error: 2, warning: 3, info: 4 };
 
 function sentinel(sentryId, shortId) {
-  return `<!-- sentry-issue-id: ${sentryId} sentry-short-id: ${shortId} -->`;
+  return `<!-- sentry-issue-id: ${sentryId} sentry-short-id: ${shortId} sentry-project: ${SENTRY_PROJECT} -->`;
 }
 
 function buildDescription(issue) {
@@ -95,9 +95,9 @@ async function buildDedupMap() {
     const tasks = data.tasks ?? [];
     for (const task of tasks) {
       const desc = task.description ?? '';
-      const match = desc.match(/<!-- sentry-issue-id: (\S+) sentry-short-id: (\S+) -->/);
+      const match = desc.match(/<!-- sentry-issue-id: (\S+) sentry-short-id: (\S+)(?: sentry-project: (\S+))? -->/);
       if (match) {
-        map.set(match[1], { taskId: task.id, shortId: match[2] });
+        map.set(match[1], { taskId: task.id, shortId: match[2], project: match[3] ?? null });
       }
     }
 
@@ -139,7 +139,13 @@ async function closePR(shortId) {
 }
 
 async function closeResolvedTasks(dedupMap, unresolvedIds) {
-  for (const [sentryId, { taskId, shortId }] of dedupMap) {
+  for (const [sentryId, { taskId, shortId, project }] of dedupMap) {
+    // Only close tasks that belong to the current project — tasks from other
+    // projects will not appear in unresolvedIds and would be wrongly closed.
+    if (project && project !== SENTRY_PROJECT) continue;
+    // Legacy tasks without a project tag are also skipped to be safe.
+    if (!project) continue;
+
     if (!unresolvedIds.has(sentryId)) {
       log(`Sentry issue ${sentryId} (${shortId}) is resolved — closing ClickUp task and PR`);
       try {
