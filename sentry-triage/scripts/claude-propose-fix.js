@@ -67,13 +67,33 @@ ${frameLines || '  (none)'}
 ${sourceBlock}
 
 ---
+
+First, determine whether this is a **performance issue** (N+1 queries, slow/inefficient queries, missing indexes, excessive DB round-trips, large payload serialisation, etc.) or a **non-performance issue** (crashes, exceptions, incorrect behaviour, etc.).
+
+Set "kind" to either "performance" or "test" based on this determination.
+
+### If "kind" is "performance":
+Propose a concrete code fix. Include:
+- A "fix" object with a description and patches (oldCode/newCode replacements).
+- A "prTitle" starting with "perf:" or "fix:".
+
+### If "kind" is "test":
+Write a Jest test file that reproduces the issue. The test should:
+1. Import the relevant modules from the source files above.
+2. Set up minimal mocks/fixtures that replicate the conditions leading to the error.
+3. Call the function(s) identified in the stack trace with inputs that trigger the exact exception.
+4. Assert that the error is thrown (e.g. expect(...).rejects.toThrow() or expect(() => ...).toThrow()).
+5. Include a descriptive test name referencing the Sentry issue ID.
+6. Be self-contained — a developer should be able to run it immediately to see the failure.
+
 Respond ONLY with valid JSON matching this exact schema — no preamble, no markdown fences:
 {
+  "kind": "performance | test",
   "rootCause": "one sentence",
   "confidence": "high | medium | low",
-  "affectedFiles": ["relative/path"],
+  "affectedFiles": ["relative/path of files involved"],
   "fix": {
-    "description": "what the fix does and why",
+    "description": "what the fix does and why (omit if kind=test)",
     "patches": [
       {
         "file": "relative/path",
@@ -82,10 +102,15 @@ Respond ONLY with valid JSON matching this exact schema — no preamble, no mark
       }
     ]
   },
-  "prTitle": "fix: concise title under 72 chars",
-  "prBody": "markdown PR description with root cause, fix summary, testing notes",
-  "suggestedTests": ["test case descriptions"]
-}`;
+  "test": {
+    "file": "relative/path for the test file (omit if kind=performance)",
+    "content": "full test file content as a string"
+  },
+  "prTitle": "concise title under 72 chars",
+  "prBody": "markdown PR description with root cause analysis"
+}
+
+Include only the "fix" or "test" field that matches the chosen kind — omit the other.`;
 }
 
 function parseResponse(text) {
@@ -106,7 +131,7 @@ async function callClaude(prompt) {
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 2000,
+      max_tokens: 4000,
       messages: [{ role: 'user', content: prompt }],
     }),
   });
@@ -126,12 +151,12 @@ async function main() {
   const newIds = new Set(newSentryIds);
 
   const issues = allIssues.filter((i) => newIds.has(i.id));
-  log(`${issues.length} new issue(s) to analyse (${allIssues.length - issues.length} already have proposals — skipping)`);
+  log(`${issues.length} new issue(s) to generate tests for (${allIssues.length - issues.length} already processed — skipping)`);
 
   const proposals = [];
 
   for (const issue of issues) {
-    log(`Proposing fix for ${issue.shortId}: ${issue.title}`);
+    log(`Generating test for ${issue.shortId}: ${issue.title}`);
 
     // Resolve source files from frames
     const seen = new Set();
@@ -160,13 +185,13 @@ async function main() {
     } catch (err) {
       log(`  Error getting/parsing Claude response for ${issue.shortId}: ${err.message}`);
       parsed = {
+        kind: 'test',
         rootCause: 'Unable to determine — Claude response parse error',
         confidence: 'low',
         affectedFiles: [],
-        fix: { description: '', patches: [] },
-        prTitle: `fix: investigate ${issue.shortId}`,
+        test: { file: '', content: '' },
+        prTitle: `test: investigate ${issue.shortId}`,
         prBody: `Automated analysis failed for [${issue.shortId}](${issue.permalink}).\n\nManual investigation required.`,
-        suggestedTests: [],
       };
     }
 

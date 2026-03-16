@@ -68,7 +68,6 @@ async function applyPatch(patch, branch, commitMessage) {
 
   let updated;
   if (!oldCode) {
-    // New file
     updated = newCode;
   } else if (current.includes(oldCode)) {
     updated = current.replace(oldCode, newCode);
@@ -81,8 +80,23 @@ async function applyPatch(patch, branch, commitMessage) {
   log(`  Committed patch to ${file}`);
 }
 
+async function commitTestFile(test, branch, commitMessage) {
+  const { file, content } = test;
+  if (!file || !content) {
+    log('  No test file to commit — skipping');
+    return;
+  }
+
+  const { sha } = await getFileContent(file, branch);
+  await commitFile(file, content, sha, commitMessage, branch);
+  log(`  Committed test file ${file}`);
+}
+
 async function openDraftPR(branchName, proposal) {
-  const footer = `\n\n---\n*Created automatically by the [sentry-triage](https://github.com/bigblueswimschool/actions) action. Confidence: **${proposal.confidence}**. Review carefully before merging.*`;
+  const isPerf = proposal.kind === 'performance';
+  const footer = isPerf
+    ? `\n\n---\n*Created automatically by the [sentry-triage](https://github.com/bigblueswimschool/actions) action. Confidence: **${proposal.confidence}**. Review carefully before merging.*`
+    : `\n\n---\n*Created automatically by the [sentry-triage](https://github.com/bigblueswimschool/actions) action. Confidence: **${proposal.confidence}**. This PR contains a reproducible test — the fix is up to you.*`;
 
   const pr = await githubRequest(`/repos/${owner}/${repo}/pulls`, 'POST', {
     title: proposal.prTitle,
@@ -128,17 +142,27 @@ async function main() {
   for (const proposal of proposals) {
     log(`Processing proposal for ${proposal.shortId}`);
 
+    const isPerf = proposal.kind === 'performance';
     const branchName = `sentry-triage/${proposal.shortId.toLowerCase()}`;
-    const commitMessage = `fix(${proposal.shortId}): ${proposal.rootCause.slice(0, 72)}`;
+    const commitPrefix = isPerf ? 'fix' : 'test';
+    const commitMessage = `${commitPrefix}(${proposal.shortId}): ${proposal.rootCause.slice(0, 60)}`;
 
     await createBranch(branchName, baseSha);
 
-    const patches = proposal.fix?.patches ?? [];
-    for (const patch of patches) {
+    if (isPerf) {
+      const patches = proposal.fix?.patches ?? [];
+      for (const patch of patches) {
+        try {
+          await applyPatch(patch, branchName, commitMessage);
+        } catch (err) {
+          log(`  Error applying patch to ${patch.file}: ${err.message}`);
+        }
+      }
+    } else if (proposal.test) {
       try {
-        await applyPatch(patch, branchName, commitMessage);
+        await commitTestFile(proposal.test, branchName, commitMessage);
       } catch (err) {
-        log(`  Error applying patch to ${patch.file}: ${err.message}`);
+        log(`  Error committing test file ${proposal.test.file}: ${err.message}`);
       }
     }
 

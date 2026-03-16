@@ -1,5 +1,5 @@
 name: Sentry Triage
-description: Fetch unresolved Sentry issues, create ClickUp tasks, propose fixes with Claude, and open draft PRs.
+description: Fetch unresolved Sentry issues, create ClickUp tasks, propose fixes for performance issues or generate reproducible tests for others, and open draft PRs.
 
 inputs:
   sentry_project_slug:
@@ -65,7 +65,7 @@ runs:
         ISSUES_FILE: /tmp/sentry-issues.json
         OUTPUT_FILE: /tmp/clickup-tasks.json
 
-    - name: Propose fixes with Claude
+    - name: Analyse issues with Claude
       run: node ${{ github.action_path }}/scripts/claude-propose-fix.js
       shell: bash
       env:
