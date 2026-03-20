@@ -21,3 +21,4 @@ jobs:
       name: Increment Minor Version on develop Branch
       with:
         level: 'preminor'
+        alias-tags: true
