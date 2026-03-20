@@ -5,14 +5,14 @@ inputs:
   nodeVersion:
     description: 'Node Version'
     required: false
-    default: '16.x'
+    default: '24.x'
 
 runs:
   using: "composite"
   steps:
     - uses: actions/checkout@v6
     - name: Use Node.js ${{ inputs.nodeVersion }}
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: ${{ inputs.nodeVersion }}
         cache: 'yarn'
