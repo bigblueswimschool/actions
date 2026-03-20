@@ -1,6 +1,6 @@
 {
     "name": "actions",
-    "version": "4.0.2",
+    "version": "4.0.3",
     "description": "Big Blue Swim School's GitHub Actions",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
