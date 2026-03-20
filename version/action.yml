@@ -1,4 +1,5 @@
 name: Increment Version
+description: Increments the npm package version, commits, and pushes a tag
 
 inputs:
   git-user-email:

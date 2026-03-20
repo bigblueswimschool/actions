@@ -1,4 +1,5 @@
 name: Build Image
+description: Builds and pushes a Docker image to Google Container Registry
 
 inputs:
   googleCredentials:

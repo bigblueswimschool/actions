@@ -1,4 +1,5 @@
 name: Create Release Branch
+description: Creates a release branch from the current package.json version
 
 inputs:
   git-user-email:

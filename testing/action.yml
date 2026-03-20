@@ -1,4 +1,5 @@
 name: Run Tests
+description: Installs dependencies with yarn and runs the test suite
 
 inputs:
   nodeVersion:

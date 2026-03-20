@@ -1,4 +1,5 @@
 name: Create Release Branch
+description: Creates a Flutter release branch from the current pubspec.yaml version
 
 inputs:
   git-user-email:
