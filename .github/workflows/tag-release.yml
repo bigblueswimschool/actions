@@ -2,15 +2,17 @@ name: Tag Release
 
 on:
   push:
-    branches: [ release/* ]
+    branches: 
+      - release/*
+    paths-ignore:
+      - 'package.json'
 
 jobs:
   version:
-    if: "!contains(github.event.head_commit.message, 'Build')"
     name: Increment Patch Version
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       name: Checkout Repo
       with:
         token: ${{ secrets.PAT }}
