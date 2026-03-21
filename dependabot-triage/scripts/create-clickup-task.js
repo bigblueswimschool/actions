@@ -3,9 +3,6 @@ import { log } from './utils/logger.js';
 
 const { CLICKUP_TOKEN, GH_TOKEN, TARGET_REPO, PARENT_TASK_ID, ALERTS_FILE, OUTPUT_FILE } = process.env;
 
-// Accept either the bare numeric ID ("381197225") or the ClickUp view format ("6-381197225-1")
-const CLICKUP_LIST_ID = (process.env.CLICKUP_LIST_ID ?? '').replace(/^\d+-(\d+)-\d+$/, '$1');
-
 async function clickupRequest(path, method = 'GET', body = null) {
   const res = await fetch(`https://api.clickup.com/api/v2${path}`, {
     method,
@@ -49,22 +46,24 @@ ${alertSentinel(alert.number, alert.package)}`;
 }
 
 /**
- * Resolve a custom task ID (e.g. "DEV-20415") to the internal ClickUp UUID.
- * Raw numeric/alphanumeric IDs are returned as-is.
+ * Resolve a custom task ID (e.g. "DEV-20415") to the internal ClickUp UUID
+ * and return the task's list ID so subtasks can be created in the same list.
  */
-async function resolveTaskId(idOrCustomId) {
+async function resolveParentTask(idOrCustomId) {
+  let task;
   // Custom IDs look like "PREFIX-NUMBER" (e.g. DEV-20415)
   if (/^[A-Z]+-\d+$/i.test(idOrCustomId)) {
     const { teams } = await clickupRequest('/team');
     if (!teams?.length) throw new Error('No teams found — cannot resolve custom task ID');
     const teamId = teams[0].id;
-    const task = await clickupRequest(
+    task = await clickupRequest(
       `/task/${encodeURIComponent(idOrCustomId)}?custom_task_ids=true&team_id=${teamId}`,
     );
     log(`Resolved ${idOrCustomId} → ${task.id}`);
-    return task.id;
+  } else {
+    task = await clickupRequest(`/task/${idOrCustomId}`);
   }
-  return idOrCustomId;
+  return { id: task.id, listId: task.list?.id };
 }
 
 /**
@@ -144,7 +143,7 @@ async function main() {
   log(`Loaded ${alerts.length} alerts from ${ALERTS_FILE}`);
 
   log(`Resolving parent task ID: ${PARENT_TASK_ID}`);
-  const parentId = await resolveTaskId(PARENT_TASK_ID);
+  const { id: parentId, listId } = await resolveParentTask(PARENT_TASK_ID);
 
   log('Fetching existing subtasks for dedup...');
   const dedupMap = await buildDedupMap(parentId);
@@ -167,7 +166,7 @@ async function main() {
     const subtaskName = `[Alert #${alert.number}] ${alert.package} — ${alert.severity}${alert.cveId ? ` (${alert.cveId})` : ''}`;
     log(`Creating subtask: ${subtaskName}`);
 
-    const subtask = await clickupRequest(`/list/${CLICKUP_LIST_ID}/task`, 'POST', {
+    const subtask = await clickupRequest(`/list/${listId}/task`, 'POST', {
       name: subtaskName,
       description: buildSubtaskDescription(alert),
       priority: PRIORITY_MAP[alert.severity] ?? 3,

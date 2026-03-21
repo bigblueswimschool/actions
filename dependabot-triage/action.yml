@@ -2,9 +2,6 @@ name: Dependabot Triage
 description: Fetch open Dependabot security alerts, create ClickUp tasks, propose safe version bumps via Claude, and open draft PRs with lockfile updates.
 
 inputs:
-  clickup_list_id:
-    description: ClickUp list ID to file tasks into
-    required: true
   clickup_token:
     description: ClickUp personal API token
     required: true
@@ -49,7 +46,6 @@ runs:
       shell: bash
       env:
         CLICKUP_TOKEN: ${{ inputs.clickup_token }}
-        CLICKUP_LIST_ID: ${{ inputs.clickup_list_id }}
         PARENT_TASK_ID: ${{ inputs.parent_task_id }}
         GH_TOKEN: ${{ inputs.gh_token }}
         TARGET_REPO: ${{ github.repository }}

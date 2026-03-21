@@ -15,7 +15,6 @@ jobs:
     steps:
       - uses: bigblueswimschool/actions/dependabot-triage@main
         with:
-          clickup_list_id: ${{ vars.CLICKUP_LIST_ID }}
           parent_task_id: ${{ vars.CLICKUP_DEPENDABOT_TASK_ID }}
           clickup_token: ${{ secrets.CLICKUP_TOKEN }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
