@@ -96,6 +96,7 @@ async function findOrCreateRepoTask(parentId, listId, repo) {
     name: `[Dependabot] ${repo}`,
     description: buildRepoTaskDescription(repo),
     parent: parentId,
+    custom_type: 'user_story',
     tags: ['dependabot', 'auto-triage'],
   });
   log(`Created repo task ${task.id}`);
