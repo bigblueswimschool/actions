@@ -139,6 +139,12 @@ async function closeResolvedSubtasks(dedupMap, openAlertNumbers) {
 }
 
 async function main() {
+  if (!PARENT_TASK_ID) {
+    throw new Error(
+      'PARENT_TASK_ID is not set. Add parent_task_id to your workflow inputs (e.g. vars.CLICKUP_DEPENDABOT_TASK_ID).',
+    );
+  }
+
   const alerts = JSON.parse(readFileSync(ALERTS_FILE, 'utf8'));
   log(`Loaded ${alerts.length} alerts from ${ALERTS_FILE}`);
 
