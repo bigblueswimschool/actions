@@ -23,12 +23,23 @@ async function clickupRequest(path, method = 'GET', body = null) {
 
 const PRIORITY_MAP = { critical: 1, high: 2, medium: 3, low: 4 };
 
-// Embeds alert number + package into the subtask description for dedup and PR-closing
+// Identifies the per-repo task within the parent
+function repoSentinel(repo) {
+  return `<!-- dependabot-triage-repo: ${repo} -->`;
+}
+
+// Identifies each alert subtask within the repo task
 function alertSentinel(number, packageName) {
   return `<!-- dependabot-alert-number: ${number} dependabot-package: ${packageName} -->`;
 }
 
-function buildSubtaskDescription(alert) {
+function buildRepoTaskDescription(repo) {
+  return `Dependabot security alerts for **${repo}**. Each open alert is tracked as a subtask below.
+
+${repoSentinel(repo)}`;
+}
+
+function buildAlertSubtaskDescription(alert) {
   return `## [Dependabot Alert #${alert.number}](${alert.permalink})
 
 | Field | Value |
@@ -51,7 +62,6 @@ ${alertSentinel(alert.number, alert.package)}`;
  */
 async function resolveParentTask(idOrCustomId) {
   let task;
-  // Custom IDs look like "PREFIX-NUMBER" (e.g. DEV-20415)
   if (/^[A-Z]+-\d+$/i.test(idOrCustomId)) {
     const { teams } = await clickupRequest('/team');
     if (!teams?.length) throw new Error('No teams found — cannot resolve custom task ID');
@@ -67,13 +77,39 @@ async function resolveParentTask(idOrCustomId) {
 }
 
 /**
- * Fetch all existing subtasks of the parent task and return a map of
+ * Find the existing repo-level task under the parent, or create it.
+ * Returns the repo task ID.
+ */
+async function findOrCreateRepoTask(parentId, listId, repo) {
+  const parent = await clickupRequest(`/task/${parentId}?include_subtasks=true`);
+  const subtasks = parent.subtasks ?? [];
+
+  for (const subtask of subtasks) {
+    if ((subtask.description ?? '').includes(repoSentinel(repo))) {
+      log(`Found existing repo task ${subtask.id} for ${repo}`);
+      return subtask.id;
+    }
+  }
+
+  log(`Creating repo task for ${repo}`);
+  const task = await clickupRequest(`/list/${listId}/task`, 'POST', {
+    name: `[Dependabot] ${repo}`,
+    description: buildRepoTaskDescription(repo),
+    parent: parentId,
+    tags: ['dependabot', 'auto-triage'],
+  });
+  log(`Created repo task ${task.id}`);
+  return task.id;
+}
+
+/**
+ * Fetch subtasks of the repo task and return a map of
  * alertNumber → { taskId, package } for deduplication.
  */
-async function buildDedupMap(parentId) {
+async function buildDedupMap(repoTaskId) {
   const map = new Map();
 
-  const task = await clickupRequest(`/task/${parentId}?include_subtasks=true`);
+  const task = await clickupRequest(`/task/${repoTaskId}?include_subtasks=true`);
   const subtasks = task.subtasks ?? [];
 
   for (const subtask of subtasks) {
@@ -151,8 +187,11 @@ async function main() {
   log(`Resolving parent task ID: ${PARENT_TASK_ID}`);
   const { id: parentId, listId } = await resolveParentTask(PARENT_TASK_ID);
 
-  log('Fetching existing subtasks for dedup...');
-  const dedupMap = await buildDedupMap(parentId);
+  log(`Finding or creating repo task for ${TARGET_REPO} under ${parentId}`);
+  const repoTaskId = await findOrCreateRepoTask(parentId, listId, TARGET_REPO);
+
+  log('Fetching existing alert subtasks for dedup...');
+  const dedupMap = await buildDedupMap(repoTaskId);
   log(`Found ${dedupMap.size} existing alert subtask(s)`);
 
   const openAlertNumbers = new Set(alerts.map((a) => a.number));
@@ -170,19 +209,29 @@ async function main() {
     }
 
     const subtaskName = `[Alert #${alert.number}] ${alert.package} — ${alert.severity}${alert.cveId ? ` (${alert.cveId})` : ''}`;
-    log(`Creating subtask: ${subtaskName}`);
+    log(`Creating alert subtask: ${subtaskName}`);
 
     const subtask = await clickupRequest(`/list/${listId}/task`, 'POST', {
       name: subtaskName,
-      description: buildSubtaskDescription(alert),
+      description: buildAlertSubtaskDescription(alert),
       priority: PRIORITY_MAP[alert.severity] ?? 3,
-      parent: parentId,
+      parent: repoTaskId,
       tags: ['dependabot', 'auto-triage', alert.ecosystem],
     });
 
     log(`Created subtask ${subtask.id} for alert #${alert.number}`);
     taskMap[alert.number] = subtask.id;
     newAlertNumbers.push(alert.number);
+  }
+
+  // Close the repo task itself if all alerts are resolved
+  if (alerts.length === 0 && dedupMap.size > 0) {
+    log(`All alerts resolved — closing repo task ${repoTaskId}`);
+    try {
+      await clickupRequest(`/task/${repoTaskId}`, 'PUT', { status: 'closed' });
+    } catch (err) {
+      log(`  Warning: could not close repo task ${repoTaskId}: ${err.message}`);
+    }
   }
 
   writeFileSync(OUTPUT_FILE, JSON.stringify({ taskMap, newAlertNumbers }, null, 2));
