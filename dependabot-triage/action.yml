@@ -57,8 +57,6 @@ runs:
       shell: bash
       env:
         ANTHROPIC_API_KEY: ${{ inputs.anthropic_api_key }}
-        GH_TOKEN: ${{ inputs.gh_token }}
-        TARGET_REPO: ${{ github.repository }}
         ALERTS_FILE: /tmp/dependabot-alerts.json
         CLICKUP_TASKS_FILE: /tmp/clickup-tasks.json
         OUTPUT_FILE: /tmp/proposals.json

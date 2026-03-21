@@ -1,36 +1,21 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { log } from './utils/logger.js';
-import { githubRequest } from './utils/github.js';
 
 const {
   ANTHROPIC_API_KEY,
-  GH_TOKEN,
-  TARGET_REPO,
   ALERTS_FILE,
   CLICKUP_TASKS_FILE,
   OUTPUT_FILE,
 } = process.env;
 
-const LOCKFILE_MAX_BYTES = 50 * 1024; // 50KB
+const MANIFEST_MAX_BYTES = 30 * 1024; // 30KB — enough for any manifest file
 
-async function fetchFileContent(owner, repo, filePath) {
-  try {
-    const data = await githubRequest(
-      `/repos/${owner}/${repo}/contents/${encodeURIComponent(filePath)}`,
-    );
-    const content = Buffer.from(data.content, 'base64').toString('utf8');
-    return content;
-  } catch (err) {
-    if (err.message.includes('404')) return null;
-    log(`  Warning: could not fetch ${filePath}: ${err.message}`);
-    return null;
-  }
-}
 
-function buildPrompt(alert, lockfileContent) {
-  const lockfileSection = lockfileContent
-    ? `\n## Lockfile (truncated if > 50KB)\n\`\`\`\n${lockfileContent.slice(0, LOCKFILE_MAX_BYTES)}\n\`\`\``
-    : '';
+function buildPrompt(alert) {
+  const manifestContent = alert.manifestContent
+    ? alert.manifestContent.slice(0, MANIFEST_MAX_BYTES)
+    : '(manifest content unavailable)';
+  const truncated = alert.manifestContent && alert.manifestContent.length > MANIFEST_MAX_BYTES;
 
   return `You are a security engineer performing automated dependency triage.
 
@@ -45,11 +30,10 @@ function buildPrompt(alert, lockfileContent) {
 - **Manifest Path:** ${alert.manifestPath}
 - **Summary:** ${alert.summary}
 
-## Manifest File (${alert.manifestPath})
+## Manifest File (${alert.manifestPath})${truncated ? ' — truncated to 30KB' : ''}
 \`\`\`
-${alert.manifestContent ?? '(manifest content unavailable)'}
+${manifestContent}
 \`\`\`
-${lockfileSection}
 
 ---
 
@@ -113,16 +97,6 @@ async function callClaude(prompt) {
   return data.content?.[0]?.text ?? '';
 }
 
-async function fetchLockfile(owner, repo, ecosystem) {
-  if (ecosystem !== 'npm') return null;
-
-  const yarnLock = await fetchFileContent(owner, repo, 'yarn.lock');
-  if (yarnLock !== null) return yarnLock;
-
-  const packageLock = await fetchFileContent(owner, repo, 'package-lock.json');
-  return packageLock;
-}
-
 async function main() {
   const allAlerts = JSON.parse(readFileSync(ALERTS_FILE, 'utf8'));
   const { newAlertNumbers } = JSON.parse(readFileSync(CLICKUP_TASKS_FILE, 'utf8'));
@@ -133,18 +107,12 @@ async function main() {
     `${alerts.length} new alert(s) to propose fixes for (${allAlerts.length - alerts.length} already processed — skipping)`,
   );
 
-  const [owner, repo] = TARGET_REPO.split('/');
   const proposals = [];
 
   for (const alert of alerts) {
     log(`Proposing fix for alert #${alert.number}: ${alert.package} (${alert.severity})`);
 
-    const lockfileContent = await fetchLockfile(owner, repo, alert.ecosystem);
-    if (lockfileContent) {
-      log(`  Fetched lockfile for ${alert.ecosystem}`);
-    }
-
-    const prompt = buildPrompt(alert, lockfileContent);
+    const prompt = buildPrompt(alert);
 
     let parsed;
     try {
