@@ -14,6 +14,9 @@ inputs:
   gh_token:
     description: GitHub PAT with security_events, repo, and workflow scopes
     required: true
+  parent_task_id:
+    description: ClickUp task ID (or custom ID like DEV-20415) to create alert subtasks under
+    required: true
   severity_threshold:
     description: Minimum severity to process (low, medium, high, critical)
     required: false
@@ -47,6 +50,7 @@ runs:
       env:
         CLICKUP_TOKEN: ${{ inputs.clickup_token }}
         CLICKUP_LIST_ID: ${{ inputs.clickup_list_id }}
+        PARENT_TASK_ID: ${{ inputs.parent_task_id }}
         GH_TOKEN: ${{ inputs.gh_token }}
         TARGET_REPO: ${{ github.repository }}
         ALERTS_FILE: /tmp/dependabot-alerts.json

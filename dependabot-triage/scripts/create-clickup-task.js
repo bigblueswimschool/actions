@@ -1,13 +1,10 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { log } from './utils/logger.js';
 
-const { CLICKUP_TOKEN, GH_TOKEN, TARGET_REPO, ALERTS_FILE, OUTPUT_FILE } = process.env;
+const { CLICKUP_TOKEN, GH_TOKEN, TARGET_REPO, PARENT_TASK_ID, ALERTS_FILE, OUTPUT_FILE } = process.env;
 
 // Accept either the bare numeric ID ("381197225") or the ClickUp view format ("6-381197225-1")
 const CLICKUP_LIST_ID = (process.env.CLICKUP_LIST_ID ?? '').replace(/^\d+-(\d+)-\d+$/, '$1');
-
-// Identifies the single omnibus task for this repo's Dependabot alerts
-const OMNIBUS_SENTINEL = '<!-- dependabot-triage-omnibus -->';
 
 async function clickupRequest(path, method = 'GET', body = null) {
   const res = await fetch(`https://api.clickup.com/api/v2${path}`, {
@@ -28,24 +25,14 @@ async function clickupRequest(path, method = 'GET', body = null) {
 }
 
 const PRIORITY_MAP = { critical: 1, high: 2, medium: 3, low: 4 };
-const SEVERITY_ORDER = ['low', 'medium', 'high', 'critical'];
 
-function highestPriority(alerts) {
-  let max = 4;
-  for (const alert of alerts) {
-    const p = PRIORITY_MAP[alert.severity] ?? 3;
-    if (p < max) max = p;
-  }
-  return max;
-}
-
-// Embeds alert number + package so we can reconstruct branch names for PR closing
+// Embeds alert number + package into the subtask description for dedup and PR-closing
 function alertSentinel(number, packageName) {
   return `<!-- dependabot-alert-number: ${number} dependabot-package: ${packageName} -->`;
 }
 
-function buildAlertEntry(alert) {
-  return `### [Alert #${alert.number}](${alert.permalink}): \`${alert.package}\` — ${alert.severity}${alert.cveId ? ` (${alert.cveId})` : ''}
+function buildSubtaskDescription(alert) {
+  return `## [Dependabot Alert #${alert.number}](${alert.permalink})
 
 | Field | Value |
 |---|---|
@@ -61,52 +48,46 @@ ${alert.summary}
 ${alertSentinel(alert.number, alert.package)}`;
 }
 
-function buildInitialDescription(alerts) {
-  const entries = alerts.map(buildAlertEntry).join('\n\n---\n\n');
-  return `## Open Dependabot Security Alerts
-
-This task tracks all open Dependabot security alerts. New alerts are automatically appended when the workflow runs.
-
----
-
-${entries}
-
-${OMNIBUS_SENTINEL}`;
-}
-
-/** Parse all alert numbers already listed in the task description. */
-function parseListedAlerts(description) {
-  const map = new Map(); // number → packageName
-  for (const match of description.matchAll(
-    /<!-- dependabot-alert-number: (\d+) dependabot-package: (\S+) -->/g,
-  )) {
-    map.set(Number(match[1]), match[2]);
-  }
-  return map;
-}
-
-/** Find the existing omnibus task (open tasks only). */
-async function findOmnibusTask() {
-  let page = 0;
-  let hasMore = true;
-
-  while (hasMore) {
-    const data = await clickupRequest(
-      `/list/${CLICKUP_LIST_ID}/task?page=${page}&include_closed=false`,
+/**
+ * Resolve a custom task ID (e.g. "DEV-20415") to the internal ClickUp UUID.
+ * Raw numeric/alphanumeric IDs are returned as-is.
+ */
+async function resolveTaskId(idOrCustomId) {
+  // Custom IDs look like "PREFIX-NUMBER" (e.g. DEV-20415)
+  if (/^[A-Z]+-\d+$/i.test(idOrCustomId)) {
+    const { teams } = await clickupRequest('/team');
+    if (!teams?.length) throw new Error('No teams found — cannot resolve custom task ID');
+    const teamId = teams[0].id;
+    const task = await clickupRequest(
+      `/task/${encodeURIComponent(idOrCustomId)}?custom_task_ids=true&team_id=${teamId}`,
     );
-    const tasks = data.tasks ?? [];
+    log(`Resolved ${idOrCustomId} → ${task.id}`);
+    return task.id;
+  }
+  return idOrCustomId;
+}
 
-    for (const task of tasks) {
-      if ((task.description ?? '').includes(OMNIBUS_SENTINEL)) {
-        return task;
-      }
+/**
+ * Fetch all existing subtasks of the parent task and return a map of
+ * alertNumber → { taskId, package } for deduplication.
+ */
+async function buildDedupMap(parentId) {
+  const map = new Map();
+
+  const task = await clickupRequest(`/task/${parentId}?include_subtasks=true`);
+  const subtasks = task.subtasks ?? [];
+
+  for (const subtask of subtasks) {
+    const desc = subtask.description ?? '';
+    const match = desc.match(
+      /<!-- dependabot-alert-number: (\d+) dependabot-package: (\S+) -->/,
+    );
+    if (match) {
+      map.set(Number(match[1]), { taskId: subtask.id, package: match[2] });
     }
-
-    hasMore = data.last_page === false && tasks.length > 0;
-    page++;
   }
 
-  return null;
+  return map;
 }
 
 async function closePR(alertNumber, packageName) {
@@ -144,81 +125,60 @@ async function closePR(alertNumber, packageName) {
   }
 }
 
+async function closeResolvedSubtasks(dedupMap, openAlertNumbers) {
+  for (const [alertNumber, { taskId, package: pkg }] of dedupMap) {
+    if (!openAlertNumbers.has(alertNumber)) {
+      log(`Alert #${alertNumber} is resolved — closing subtask ${taskId} and its PR`);
+      try {
+        await clickupRequest(`/task/${taskId}`, 'PUT', { status: 'closed' });
+      } catch (err) {
+        log(`  Warning: could not close subtask ${taskId}: ${err.message}`);
+      }
+      await closePR(alertNumber, pkg);
+    }
+  }
+}
+
 async function main() {
   const alerts = JSON.parse(readFileSync(ALERTS_FILE, 'utf8'));
   log(`Loaded ${alerts.length} alerts from ${ALERTS_FILE}`);
 
-  log('Looking for existing omnibus Dependabot task...');
-  const existingTask = await findOmnibusTask();
+  log(`Resolving parent task ID: ${PARENT_TASK_ID}`);
+  const parentId = await resolveTaskId(PARENT_TASK_ID);
+
+  log('Fetching existing subtasks for dedup...');
+  const dedupMap = await buildDedupMap(parentId);
+  log(`Found ${dedupMap.size} existing alert subtask(s)`);
 
   const openAlertNumbers = new Set(alerts.map((a) => a.number));
+  await closeResolvedSubtasks(dedupMap, openAlertNumbers);
 
-  // No open alerts — close the omnibus task if it exists
-  if (alerts.length === 0) {
-    if (existingTask) {
-      log('No open alerts — closing omnibus task');
-      await clickupRequest(`/task/${existingTask.id}`, 'PUT', { status: 'closed' });
-    } else {
-      log('No open alerts and no existing task — nothing to do');
+  const taskMap = {};
+  const newAlertNumbers = [];
+
+  for (const alert of alerts) {
+    if (dedupMap.has(alert.number)) {
+      const { taskId: existingId } = dedupMap.get(alert.number);
+      log(`Alert #${alert.number} (${alert.package}) already has subtask ${existingId} — skipping`);
+      taskMap[alert.number] = existingId;
+      continue;
     }
-    writeFileSync(OUTPUT_FILE, JSON.stringify({ taskMap: {}, newAlertNumbers: [] }, null, 2));
-    return;
-  }
 
-  let taskId;
-  let newAlertNumbers;
+    const subtaskName = `[Alert #${alert.number}] ${alert.package} — ${alert.severity}${alert.cveId ? ` (${alert.cveId})` : ''}`;
+    log(`Creating subtask: ${subtaskName}`);
 
-  if (!existingTask) {
-    // Create brand-new omnibus task with all current alerts
-    log(`Creating omnibus task for ${alerts.length} alert(s)`);
-    const task = await clickupRequest(`/list/${CLICKUP_LIST_ID}/task`, 'POST', {
-      name: '[Dependabot] Security Alerts',
-      description: buildInitialDescription(alerts),
-      priority: highestPriority(alerts),
-      tags: ['dependabot', 'auto-triage'],
+    const subtask = await clickupRequest(`/list/${CLICKUP_LIST_ID}/task`, 'POST', {
+      name: subtaskName,
+      description: buildSubtaskDescription(alert),
+      priority: PRIORITY_MAP[alert.severity] ?? 3,
+      parent: parentId,
+      tags: ['dependabot', 'auto-triage', alert.ecosystem],
     });
-    log(`Created task ${task.id}`);
-    taskId = task.id;
-    newAlertNumbers = alerts.map((a) => a.number);
-  } else {
-    taskId = existingTask.id;
-    log(`Found existing omnibus task ${taskId}`);
 
-    const listedAlerts = parseListedAlerts(existingTask.description ?? '');
-    log(`Task already lists ${listedAlerts.size} alert(s)`);
-
-    // Close PRs for alerts that are no longer open
-    for (const [number, packageName] of listedAlerts) {
-      if (!openAlertNumbers.has(number)) {
-        log(`Alert #${number} is resolved — closing its PR`);
-        await closePR(number, packageName);
-      }
-    }
-
-    // Append entries for alerts not yet in the description
-    const newAlerts = alerts.filter((a) => !listedAlerts.has(a.number));
-    newAlertNumbers = newAlerts.map((a) => a.number);
-
-    if (newAlerts.length > 0) {
-      log(`Appending ${newAlerts.length} new alert(s) to task ${taskId}`);
-      const appendedEntries = newAlerts.map(buildAlertEntry).join('\n\n---\n\n');
-      // Insert new entries just before the omnibus sentinel
-      const updatedDescription = (existingTask.description ?? '').replace(
-        OMNIBUS_SENTINEL,
-        `---\n\n${appendedEntries}\n\n${OMNIBUS_SENTINEL}`,
-      );
-      await clickupRequest(`/task/${taskId}`, 'PUT', {
-        description: updatedDescription,
-        priority: highestPriority(alerts),
-      });
-      log(`Updated task ${taskId}`);
-    } else {
-      log('No new alerts to append');
-    }
+    log(`Created subtask ${subtask.id} for alert #${alert.number}`);
+    taskMap[alert.number] = subtask.id;
+    newAlertNumbers.push(alert.number);
   }
-
-  // All alerts share the single omnibus task ID
-  const taskMap = Object.fromEntries(alerts.map((a) => [a.number, taskId]));
 
   writeFileSync(OUTPUT_FILE, JSON.stringify({ taskMap, newAlertNumbers }, null, 2));
   log(
