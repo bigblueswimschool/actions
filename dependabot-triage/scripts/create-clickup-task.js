@@ -6,6 +6,9 @@ const { CLICKUP_TOKEN, GH_TOKEN, TARGET_REPO, ALERTS_FILE, OUTPUT_FILE } = proce
 // Accept either the bare numeric ID ("381197225") or the ClickUp view format ("6-381197225-1")
 const CLICKUP_LIST_ID = (process.env.CLICKUP_LIST_ID ?? '').replace(/^\d+-(\d+)-\d+$/, '$1');
 
+// Identifies the single omnibus task for this repo's Dependabot alerts
+const OMNIBUS_SENTINEL = '<!-- dependabot-triage-omnibus -->';
+
 async function clickupRequest(path, method = 'GET', body = null) {
   const res = await fetch(`https://api.clickup.com/api/v2${path}`, {
     method,
@@ -25,32 +28,65 @@ async function clickupRequest(path, method = 'GET', body = null) {
 }
 
 const PRIORITY_MAP = { critical: 1, high: 2, medium: 3, low: 4 };
+const SEVERITY_ORDER = ['low', 'medium', 'high', 'critical'];
 
-function sentinel(number, packageName, ecosystem) {
-  return `<!-- dependabot-alert-number: ${number} dependabot-package: ${packageName} dependabot-ecosystem: ${ecosystem} -->`;
+function highestPriority(alerts) {
+  let max = 4;
+  for (const alert of alerts) {
+    const p = PRIORITY_MAP[alert.severity] ?? 3;
+    if (p < max) max = p;
+  }
+  return max;
 }
 
-function buildDescription(alert) {
-  return `## [Dependabot Alert #${alert.number}](${alert.permalink})
+// Embeds alert number + package so we can reconstruct branch names for PR closing
+function alertSentinel(number, packageName) {
+  return `<!-- dependabot-alert-number: ${number} dependabot-package: ${packageName} -->`;
+}
 
-**Package:** ${alert.package}
-**Ecosystem:** ${alert.ecosystem}
-**CVE ID:** ${alert.cveId ?? 'N/A'}
-**Severity:** ${alert.severity}
-**CVSS Score:** ${alert.cvss ?? 'N/A'}
-**Vulnerable Range:** ${alert.vulnerableRange ?? 'N/A'}
-**Patched Version:** ${alert.patchedVersion ?? 'N/A'}
-**Manifest Path:** ${alert.manifestPath ?? 'N/A'}
+function buildAlertEntry(alert) {
+  return `### [Alert #${alert.number}](${alert.permalink}): \`${alert.package}\` — ${alert.severity}${alert.cveId ? ` (${alert.cveId})` : ''}
 
-### Summary
+| Field | Value |
+|---|---|
+| **Ecosystem** | ${alert.ecosystem} |
+| **CVE ID** | ${alert.cveId ?? 'N/A'} |
+| **CVSS Score** | ${alert.cvss ?? 'N/A'} |
+| **Vulnerable Range** | ${alert.vulnerableRange ?? 'N/A'} |
+| **Patched Version** | ${alert.patchedVersion ?? 'N/A'} |
+| **Manifest** | \`${alert.manifestPath ?? 'N/A'}\` |
+
 ${alert.summary}
 
-${sentinel(alert.number, alert.package, alert.ecosystem)}`;
+${alertSentinel(alert.number, alert.package)}`;
 }
 
-async function buildDedupMap() {
-  const map = new Map();
+function buildInitialDescription(alerts) {
+  const entries = alerts.map(buildAlertEntry).join('\n\n---\n\n');
+  return `## Open Dependabot Security Alerts
 
+This task tracks all open Dependabot security alerts. New alerts are automatically appended when the workflow runs.
+
+---
+
+${entries}
+
+${OMNIBUS_SENTINEL}`;
+}
+
+/** Parse all alert numbers already listed in the task description. */
+function parseListedAlerts(description) {
+  const map = new Map(); // number → packageName
+  for (const match of description.matchAll(
+    /<!-- dependabot-alert-number: (\d+) dependabot-package: (\S+) -->/g,
+  )) {
+    map.set(Number(match[1]), match[2]);
+  }
+  return map;
+}
+
+/** Find the existing omnibus task (open tasks only). */
+async function findOmnibusTask() {
   let page = 0;
   let hasMore = true;
 
@@ -58,19 +94,11 @@ async function buildDedupMap() {
     const data = await clickupRequest(
       `/list/${CLICKUP_LIST_ID}/task?page=${page}&include_closed=false`,
     );
-
     const tasks = data.tasks ?? [];
+
     for (const task of tasks) {
-      const desc = task.description ?? '';
-      const match = desc.match(
-        /<!-- dependabot-alert-number: (\d+) dependabot-package: (\S+) dependabot-ecosystem: (\S+) -->/,
-      );
-      if (match) {
-        map.set(Number(match[1]), {
-          taskId: task.id,
-          package: match[2],
-          ecosystem: match[3],
-        });
+      if ((task.description ?? '').includes(OMNIBUS_SENTINEL)) {
+        return task;
       }
     }
 
@@ -78,13 +106,13 @@ async function buildDedupMap() {
     page++;
   }
 
-  return map;
+  return null;
 }
 
 async function closePR(alertNumber, packageName) {
   if (!GH_TOKEN || !TARGET_REPO) return;
   const [owner, repo] = TARGET_REPO.split('/');
-  const branch = `dependabot-triage/${packageName.toLowerCase().replace(/\//g, '-')}-${alertNumber}`;
+  const branch = `dependabot-triage/${packageName.toLowerCase().replace(/[^a-z0-9-]/g, '-')}-${alertNumber}`;
 
   try {
     const res = await fetch(
@@ -116,56 +144,81 @@ async function closePR(alertNumber, packageName) {
   }
 }
 
-async function closeResolvedTasks(dedupMap, openAlertNumbers) {
-  for (const [alertNumber, { taskId, package: pkg }] of dedupMap) {
-    if (!openAlertNumbers.has(alertNumber)) {
-      log(`Alert #${alertNumber} is resolved — closing ClickUp task and PR`);
-      try {
-        await clickupRequest(`/task/${taskId}`, 'PUT', { status: 'closed' });
-      } catch (err) {
-        log(`  Warning: could not close task ${taskId}: ${err.message}`);
-      }
-      await closePR(alertNumber, pkg);
-    }
-  }
-}
-
 async function main() {
   const alerts = JSON.parse(readFileSync(ALERTS_FILE, 'utf8'));
   log(`Loaded ${alerts.length} alerts from ${ALERTS_FILE}`);
 
-  log('Building dedup map from existing ClickUp tasks...');
-  const dedupMap = await buildDedupMap();
-  log(`Found ${dedupMap.size} existing dependabot-linked tasks`);
+  log('Looking for existing omnibus Dependabot task...');
+  const existingTask = await findOmnibusTask();
 
   const openAlertNumbers = new Set(alerts.map((a) => a.number));
-  await closeResolvedTasks(dedupMap, openAlertNumbers);
 
-  const taskMap = {};
-  const newAlertNumbers = [];
+  // No open alerts — close the omnibus task if it exists
+  if (alerts.length === 0) {
+    if (existingTask) {
+      log('No open alerts — closing omnibus task');
+      await clickupRequest(`/task/${existingTask.id}`, 'PUT', { status: 'closed' });
+    } else {
+      log('No open alerts and no existing task — nothing to do');
+    }
+    writeFileSync(OUTPUT_FILE, JSON.stringify({ taskMap: {}, newAlertNumbers: [] }, null, 2));
+    return;
+  }
 
-  for (const alert of alerts) {
-    if (dedupMap.has(alert.number)) {
-      const { taskId: existingId } = dedupMap.get(alert.number);
-      log(`Alert #${alert.number} (${alert.package}) already has ClickUp task ${existingId} — skipping`);
-      taskMap[alert.number] = existingId;
-      continue;
+  let taskId;
+  let newAlertNumbers;
+
+  if (!existingTask) {
+    // Create brand-new omnibus task with all current alerts
+    log(`Creating omnibus task for ${alerts.length} alert(s)`);
+    const task = await clickupRequest(`/list/${CLICKUP_LIST_ID}/task`, 'POST', {
+      name: '[Dependabot] Security Alerts',
+      description: buildInitialDescription(alerts),
+      priority: highestPriority(alerts),
+      tags: ['dependabot', 'auto-triage'],
+    });
+    log(`Created task ${task.id}`);
+    taskId = task.id;
+    newAlertNumbers = alerts.map((a) => a.number);
+  } else {
+    taskId = existingTask.id;
+    log(`Found existing omnibus task ${taskId}`);
+
+    const listedAlerts = parseListedAlerts(existingTask.description ?? '');
+    log(`Task already lists ${listedAlerts.size} alert(s)`);
+
+    // Close PRs for alerts that are no longer open
+    for (const [number, packageName] of listedAlerts) {
+      if (!openAlertNumbers.has(number)) {
+        log(`Alert #${number} is resolved — closing its PR`);
+        await closePR(number, packageName);
+      }
     }
 
-    const taskName = `[Dependabot] ${alert.package} — ${alert.severity} vulnerability${alert.cveId ? ` (${alert.cveId})` : ''}`;
-    log(`Creating ClickUp task: ${taskName}`);
+    // Append entries for alerts not yet in the description
+    const newAlerts = alerts.filter((a) => !listedAlerts.has(a.number));
+    newAlertNumbers = newAlerts.map((a) => a.number);
 
-    const task = await clickupRequest(`/list/${CLICKUP_LIST_ID}/task`, 'POST', {
-      name: taskName,
-      description: buildDescription(alert),
-      priority: PRIORITY_MAP[alert.severity] ?? 3,
-      tags: ['dependabot', 'auto-triage', alert.ecosystem],
-    });
-
-    log(`Created task ${task.id} for alert #${alert.number}`);
-    taskMap[alert.number] = task.id;
-    newAlertNumbers.push(alert.number);
+    if (newAlerts.length > 0) {
+      log(`Appending ${newAlerts.length} new alert(s) to task ${taskId}`);
+      const appendedEntries = newAlerts.map(buildAlertEntry).join('\n\n---\n\n');
+      // Insert new entries just before the omnibus sentinel
+      const updatedDescription = (existingTask.description ?? '').replace(
+        OMNIBUS_SENTINEL,
+        `---\n\n${appendedEntries}\n\n${OMNIBUS_SENTINEL}`,
+      );
+      await clickupRequest(`/task/${taskId}`, 'PUT', {
+        description: updatedDescription,
+        priority: highestPriority(alerts),
+      });
+      log(`Updated task ${taskId}`);
+    } else {
+      log('No new alerts to append');
+    }
   }
+
+  // All alerts share the single omnibus task ID
+  const taskMap = Object.fromEntries(alerts.map((a) => [a.number, taskId]));
 
   writeFileSync(OUTPUT_FILE, JSON.stringify({ taskMap, newAlertNumbers }, null, 2));
   log(
