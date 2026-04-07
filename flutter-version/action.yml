@@ -13,6 +13,10 @@ inputs:
     description: 'Version Level to Increment'
     required: false
     default: 'patch'
+  token:
+    description: 'GitHub token for build number generation'
+    required: false
+    default: ${{ github.token }}
 
 runs:
   using: "composite"
@@ -26,7 +30,7 @@ runs:
       id: build-number
       uses: bigblueswimschool/actions/build-number@production
       with:
-        token: ${{ secrets.github_token }}
+        token: ${{ inputs.token }}
     - name: Increment ${{ inputs.level }} Version
       if: "contains(inputs.level, 'prerelease') || contains(inputs.level, 'preminor')"
       run: |
