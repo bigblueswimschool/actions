@@ -1,0 +1,22 @@
+# Copy this file to .github/workflows/dependabot-watch.yml in your consuming repo
+# and update the inputs below.
+
+name: Dependabot Triage
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'   # Every Monday at 9am UTC
+  workflow_dispatch:
+
+jobs:
+  triage:
+    name: Triage Dependabot Alerts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: bigblueswimschool/actions/dependabot-triage@main
+        with:
+          parent_task_id: ${{ vars.CLICKUP_DEPENDABOT_TASK_ID }}
+          clickup_token: ${{ secrets.CLICKUP_TOKEN }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          gh_token: ${{ secrets.GH_TOKEN }}
+          severity_threshold: medium

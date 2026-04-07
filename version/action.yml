@@ -1,4 +1,5 @@
 name: Increment Version
+description: Increments the npm package version, commits, and pushes a tag
 
 inputs:
   git-user-email:
@@ -17,6 +18,10 @@ inputs:
     description: 'Pre-Release id'
     required: false
     default: 'beta'
+  alias-tags:
+    description: 'Also create/update vX and vX.X alias tags pointing to this version'
+    required: false
+    default: 'false'
 
 runs:
   using: "composite"
@@ -42,4 +47,14 @@ runs:
     - name: Push Version
       run: |
         git push --set-upstream origin ${{ github.ref_name }} --tags
+      shell: bash
+    - name: Update alias tags
+      if: inputs.alias-tags == 'true'
+      run: |
+        CURRENT_VERSION=$(node -pe "require('./package.json').version")
+        MAJOR="v$(echo $CURRENT_VERSION | cut -d. -f1)"
+        MINOR="v$(echo $CURRENT_VERSION | cut -d. -f1,2)"
+        git tag -fa "$MAJOR" -m "$MAJOR"
+        git tag -fa "$MINOR" -m "$MINOR"
+        git push origin "$MAJOR" "$MINOR" --force
       shell: bash

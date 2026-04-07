@@ -6,14 +6,17 @@ concurrency:
 
 on:
   push:
-    branches: [develop]
+    branches: 
+      - develop
+    paths-ignore:
+      - 'package.json'
 
 jobs:
   version:
     name: Increment Version
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         name: Checkout Repo
       - uses: bigblueswimschool/actions/version@v1
         name: Increment Pre-Release Version

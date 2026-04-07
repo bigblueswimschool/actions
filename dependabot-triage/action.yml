@@ -1,0 +1,73 @@
+name: Dependabot Triage
+description: Fetch open Dependabot security alerts, create ClickUp tasks, propose safe version bumps via Claude, and open draft PRs with lockfile updates.
+
+inputs:
+  clickup_token:
+    description: ClickUp personal API token
+    required: true
+  anthropic_api_key:
+    description: Anthropic API key
+    required: true
+  gh_token:
+    description: GitHub PAT with security_events, repo, and workflow scopes
+    required: true
+  parent_task_id:
+    description: ClickUp task ID (or custom ID like DEV-20415) to create alert subtasks under
+    required: true
+  severity_threshold:
+    description: Minimum severity to process (low, medium, high, critical)
+    required: false
+    default: 'medium'
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout target repo
+      uses: actions/checkout@v6
+      with:
+        token: ${{ inputs.gh_token }}
+
+    - name: Setup Node
+      uses: actions/setup-node@v6
+      with:
+        node-version: '24'
+
+    - name: Fetch Dependabot alerts
+      run: node ${{ github.action_path }}/scripts/fetch-dependabot.js
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.gh_token }}
+        TARGET_REPO: ${{ github.repository }}
+        SEVERITY_THRESHOLD: ${{ inputs.severity_threshold }}
+        OUTPUT_FILE: /tmp/dependabot-alerts.json
+
+    - name: Create ClickUp tasks
+      run: node ${{ github.action_path }}/scripts/create-clickup-task.js
+      shell: bash
+      env:
+        CLICKUP_TOKEN: ${{ inputs.clickup_token }}
+        PARENT_TASK_ID: ${{ inputs.parent_task_id }}
+        GH_TOKEN: ${{ inputs.gh_token }}
+        TARGET_REPO: ${{ github.repository }}
+        ALERTS_FILE: /tmp/dependabot-alerts.json
+        OUTPUT_FILE: /tmp/clickup-tasks.json
+
+    - name: Propose fixes with Claude
+      run: node ${{ github.action_path }}/scripts/claude-propose-fix.js
+      shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic_api_key }}
+        ALERTS_FILE: /tmp/dependabot-alerts.json
+        CLICKUP_TASKS_FILE: /tmp/clickup-tasks.json
+        OUTPUT_FILE: /tmp/proposals.json
+
+    - name: Verify and open draft PRs
+      run: node ${{ github.action_path }}/scripts/verify-and-open-pr.js
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.gh_token }}
+        TARGET_REPO: ${{ github.repository }}
+        TARGET_BRANCH: ${{ github.ref_name }}
+        PROPOSALS_FILE: /tmp/proposals.json
+        CLICKUP_TASKS_FILE: /tmp/clickup-tasks.json
+        CLICKUP_TOKEN: ${{ inputs.clickup_token }}

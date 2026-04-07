@@ -1,4 +1,5 @@
 name: Increment Version
+description: Increments the Flutter app version in pubspec.yaml and pushes a tag
 
 inputs:
   git-user-email:
