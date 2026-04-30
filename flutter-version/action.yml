@@ -18,18 +18,11 @@ inputs:
     description: 'Pre-Release id used in the -<id>.N suffix on prereleases'
     required: false
     default: 'beta'
-  token:
-    description: 'GitHub token for build number generation'
-    required: false
-    default: ${{ github.token }}
 
 outputs:
   current-version:
-    description: 'The new pubspec.yaml version (e.g. 1.2.3-beta.4+685)'
+    description: 'The new pubspec.yaml version (e.g. 1.2.3-beta.4)'
     value: ${{ steps.bump.outputs.current-version }}
-  build-number:
-    description: 'The integer build number (the value after the + in the pubspec version)'
-    value: ${{ steps.build-number.outputs.build-number }}
 
 runs:
   using: "composite"
@@ -39,23 +32,19 @@ runs:
         git config --global user.email "${{ inputs.git-user-email }}"
         git config --global user.name "${{ inputs.git-user-name }}"
       shell: bash
-    - name: Generate build number
-      id: build-number
-      uses: bigblueswimschool/actions/build-number@v5
-      with:
-        token: ${{ inputs.token }}
     - name: Increment ${{ inputs.level }} Version
       id: bump
       env:
         LEVEL: ${{ inputs.level }}
         PREID: ${{ inputs.preid }}
-        BUILD_NUMBER: ${{ steps.build-number.outputs.build-number }}
       run: |
         set -euo pipefail
         git pull
         file="pubspec.yaml"
         version_line=$(grep -m1 "^version:" "$file")
-        re='^version:[[:space:]]*([0-9]+)\.([0-9]+)\.([0-9]+)(-([a-zA-Z0-9]+)\.([0-9]+))?\+([0-9]+)[[:space:]]*$'
+        # +build is accepted for backwards compatibility with old pubspec values
+        # (it gets parsed and discarded; the bump never re-emits it).
+        re='^version:[[:space:]]*([0-9]+)\.([0-9]+)\.([0-9]+)(-([a-zA-Z0-9]+)\.([0-9]+))?(\+([0-9]+))?[[:space:]]*$'
         if [[ $version_line =~ $re ]]; then
           major="${BASH_REMATCH[1]}"
           minor="${BASH_REMATCH[2]}"
@@ -95,7 +84,6 @@ runs:
         if [[ -n "$pre_num" ]]; then
           version="$version-$pre_id.$pre_num"
         fi
-        version="$version+$BUILD_NUMBER"
 
         sed -i "s/^version: .*/version: $version/" "$file"
         echo "Updated version: $version"
