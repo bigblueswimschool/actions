@@ -11,13 +11,25 @@ inputs:
     required: false
     default: 'Big Blue CICD'
   level:
-    description: 'Version Level to Increment'
+    description: 'Version Level to Increment (major | minor | patch | preminor | prerelease)'
     required: false
     default: 'patch'
+  preid:
+    description: 'Pre-Release id used in the -<id>.N suffix on prereleases'
+    required: false
+    default: 'beta'
   token:
     description: 'GitHub token for build number generation'
     required: false
     default: ${{ github.token }}
+
+outputs:
+  current-version:
+    description: 'The new pubspec.yaml version (e.g. 1.2.3-beta.4+685)'
+    value: ${{ steps.bump.outputs.current-version }}
+  build-number:
+    description: 'The integer build number (the value after the + in the pubspec version)'
+    value: ${{ steps.build-number.outputs.build-number }}
 
 runs:
   using: "composite"
@@ -29,74 +41,68 @@ runs:
       shell: bash
     - name: Generate build number
       id: build-number
-      uses: bigblueswimschool/actions/build-number@production
+      uses: bigblueswimschool/actions/build-number@v5
       with:
         token: ${{ inputs.token }}
     - name: Increment ${{ inputs.level }} Version
-      if: "contains(inputs.level, 'prerelease') || contains(inputs.level, 'preminor')"
+      id: bump
+      env:
+        LEVEL: ${{ inputs.level }}
+        PREID: ${{ inputs.preid }}
+        BUILD_NUMBER: ${{ steps.build-number.outputs.build-number }}
       run: |
+        set -euo pipefail
         git pull
         file="pubspec.yaml"
-        level="${{ inputs.level }}"
         version_line=$(grep -m1 "^version:" "$file")
-        if [[ $version_line =~ ([0-9]+)\.([0-9]+)\.([0-9]+)\+([0-9]+) ]]; then
+        re='^version:[[:space:]]*([0-9]+)\.([0-9]+)\.([0-9]+)(-([a-zA-Z0-9]+)\.([0-9]+))?\+([0-9]+)[[:space:]]*$'
+        if [[ $version_line =~ $re ]]; then
           major="${BASH_REMATCH[1]}"
           minor="${BASH_REMATCH[2]}"
           patch="${BASH_REMATCH[3]}"
-          build="${BASH_REMATCH[4]}"
-          case "$level" in
-            major)
-              major=$((major + 1)); minor=0; patch=0; build=$((build + 1)) ;;
-            preminor)
-              minor=$((minor + 1)); patch=0; build=$((build + 1)) ;;
-            patch)
-              patch=$((patch + 1)); build=$((build + 1)) ;;
-            prerelease)
-              build=$((build + 1)) ;;
-            *)
-              echo "Invalid level: $level. Use major, minor, patch, or build."; exit 1 ;;
-          esac
-          CURRENT_VERSION="$major.$minor.$patch+${{ steps.build-number.outputs.build-number }}"
-          sed -i "s/^version: .*/version: $CURRENT_VERSION/" "$file"
-          echo "Updated version: $CURRENT_VERSION"
+          pre_id="${BASH_REMATCH[5]:-}"
+          pre_num="${BASH_REMATCH[6]:-}"
         else
-          echo "Version not found or invalid format."; exit 1
+          echo "::error::Could not parse pubspec.yaml version line: $version_line"
+          exit 1
         fi
-        
-        git commit -a -m $"Build ${CURRENT_VERSION}" -m "skip ci"
-      shell: bash
-    - name: Increment ${{ inputs.level }} Version
-      if: "!contains(inputs.level, 'prerelease') && !contains(inputs.level, 'preminor')"
-      run: |
-        git pull
-        file="pubspec.yaml"
-        level="${{ inputs.level }}"
-        version_line=$(grep -m1 "^version:" "$file")
-        if [[ $version_line =~ ([0-9]+)\.([0-9]+)\.([0-9]+)\+([0-9]+) ]]; then
-          major="${BASH_REMATCH[1]}"
-          minor="${BASH_REMATCH[2]}"
-          patch="${BASH_REMATCH[3]}"
-          build="${BASH_REMATCH[4]}"
-          case "$level" in
-            major)
-              major=$((major + 1)); minor=0; patch=0; build=$((build + 1)) ;;
-            minor)
-              minor=$((minor + 1)); patch=0; build=$((build + 1)) ;;
-            patch)
-              patch=$((patch + 1)); build=$((build + 1)) ;;
-            prerelease)
-              build=$((build + 1)) ;;
-            *)
-              echo "Invalid level: $level. Use major, minor, patch, or build."; exit 1 ;;
-          esac
-          CURRENT_VERSION="$major.$minor.$patch+${{ steps.build-number.outputs.build-number }}"
-          sed -i "s/^version: .*/version: $CURRENT_VERSION/" "$file"
-          echo "Updated version: $CURRENT_VERSION"
-        else
-          echo "Version not found or invalid format."; exit 1
+
+        case "$LEVEL" in
+          major)
+            major=$((major + 1)); minor=0; patch=0; pre_id=""; pre_num="" ;;
+          minor)
+            minor=$((minor + 1)); patch=0; pre_id=""; pre_num="" ;;
+          patch)
+            if [[ -n "$pre_num" ]]; then
+              pre_id=""; pre_num=""
+            else
+              patch=$((patch + 1))
+            fi ;;
+          preminor)
+            minor=$((minor + 1)); patch=0; pre_id="$PREID"; pre_num=0 ;;
+          prerelease)
+            if [[ -n "$pre_num" ]]; then
+              pre_num=$((pre_num + 1))
+            else
+              patch=$((patch + 1)); pre_id="$PREID"; pre_num=0
+            fi ;;
+          *)
+            echo "::error::Invalid level: $LEVEL. Use major, minor, patch, preminor, or prerelease."
+            exit 1 ;;
+        esac
+
+        version="$major.$minor.$patch"
+        if [[ -n "$pre_num" ]]; then
+          version="$version-$pre_id.$pre_num"
         fi
-        git commit -a -m $"Build ${CURRENT_VERSION}" -m "skip ci"
-        git tag "$CURRENT_VERSION"
+        version="$version+$BUILD_NUMBER"
+
+        sed -i "s/^version: .*/version: $version/" "$file"
+        echo "Updated version: $version"
+
+        git commit -a -m "Build $version" -m "[skip ci]"
+        git tag "$version"
+        echo "current-version=$version" >> "$GITHUB_OUTPUT"
       shell: bash
     - name: Push Version
       run: |

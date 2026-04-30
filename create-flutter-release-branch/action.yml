@@ -22,7 +22,6 @@ runs:
     - name: Create Release Branch
       run: |
         git pull
-        level="${{ inputs.level }}"
         CURRENT_VERSION=$(grep -m1 "^version:" pubspec.yaml | sed -E 's/^version: ([0-9]+)\.([0-9]+)\..*/\1.\2/')
         git checkout -b release/${CURRENT_VERSION}
         git push --set-upstream origin release/${CURRENT_VERSION}
