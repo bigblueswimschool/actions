@@ -2,8 +2,11 @@ name: Build Image
 description: Builds and pushes a Docker image to Google Container Registry
 
 inputs:
-  googleCredentials:
-    description: 'Google Credentials'
+  workloadIdentityProvider:
+    description: 'Full resource name of the Workload Identity Provider (projects/.../providers/...)'
+    required: true
+  serviceAccount:
+    description: 'Email of the Google Cloud service account to impersonate'
     required: true
   googleProjectId:
     description: 'Google Project ID'
@@ -26,7 +29,8 @@ runs:
     - uses: actions/checkout@v6
     - uses: google-github-actions/auth@v3
       with:
-        credentials_json: ${{ inputs.googleCredentials }}
+        workload_identity_provider: ${{ inputs.workloadIdentityProvider }}
+        service_account: ${{ inputs.serviceAccount }}
     - name: Authenticate GoogleCloud
       uses: google-github-actions/setup-gcloud@v3
       with:
